@@ -88,27 +88,25 @@ def get_duplicates():
 
 @dp.message(Command("start"))
 async def cmd_start(message: types.Message):
-    user_id = message.from_user.id
-    channel_unsubscribed = []
-    for channel_username in channel_usernames:
-        if await is_subscribed(user_id, channel_username):
-            continue
-        else:
-            channel_unsubscribed.append(channel_username)
-    builder = InlineKeyboardBuilder()
-    for channel in channel_unsubscribed:
-        builder.add(types.InlineKeyboardButton(text=f"{channel}", url=f"https://t.me/{channel[1:]}"))
-        builder.adjust(1, 1)
-    if channel_unsubscribed:
-        builder.add(types.InlineKeyboardButton(text=f"Tekshirish", callback_data="checkSubscription"))
-        builder.adjust(1, 1)
-        await message.answer("• Botdan foydalanish uchun avval kanalga obuna bo’ling va Tekshirish tugmasini bosing! \n @TexoAI - sun''iy intellektlar va texnologiyalar haqida eng so''nggi yangiliklarni berib boruvchi kanal",
-                             reply_markup=builder.as_markup())
-        return
+    user = message.from_user
+    if user.id not in all_users:
+        all_users[user.id] = user.first_name
+        active_users[user.id] = user.first_name
+        today_logined_users.append(user.id)
+    if user.id in all_users and user.id in inactive_users:
+        active_users[user.id] = user.first_name
+        inactive_users.remove(user.id)
+    kb = [
+        [
+            types.KeyboardButton(text="ChatGPT bilan muloqot qilish 🤖"),
+            types.KeyboardButton(text="Mening ID raqamim 🔍")
+         ],
+    ]
+    if user.id in admin_userIds.keys():
+        kb.append([types.KeyboardButton(text="Admin panel ⚙️")])
 
-@dp.message(Command("information"))
-async def cmd_start(message: types.Message):
-    await message.answer("🤖Bot ChatGPT sun''iy intellektni qo''llab-quvvatlaydi. Foydalanish uchun esa shunchaki savolingizni botga yozing! \n Foydalanish qo'llanmasi: \n• Bot sizning istalgan savolingizga suhbatdoshdek javob beradi va barcha tillarda so'zlashishingiz mumkin; \n• Bot faqat 2021-yilgi ma'lumotlarga ega;\n• Notog''ri javob qaytarsa, savolingizni qaytadan batafsilroq yozing.\nBuyruqlar: \n/start - botni qayta ishga tushirish;\n/information - foydalanish qo''llanmasi\nMurojaat va takliflar uchun:\n @TexnoGPT_support")
+    keyboard = types.ReplyKeyboardMarkup(keyboard=kb)
+    await message.answer("Assalomu aleykum\n\nBu bot siz uchun ba'zi xizmatlar beradi. Xizmatlarni pasdan tanlashingiz mumkun 😇", reply_markup=keyboard)
 
 
 @dp.message()
@@ -262,8 +260,41 @@ async def handle_message(message: types.Message):
                 f"Siz qoshgan kanallar lar royxati",
                 reply_markup=builder.as_markup())
     if user_id in send_message:
-        for user in list(active_users.items()):
-            await message.answer(user_id=user, text=user_message)
+        # if user_id in send_message_text:
+
+        if user_id in send_message_video:
+            try:
+                if message.video.file_id:
+                    kb = [
+                        [
+                            types.KeyboardButton(text="Xa"),
+                            types.KeyboardButton(text="Yoq"),
+                        ],
+                        [types.KeyboardButton(text="Orqaga qaytish ❌")]
+                    ]
+                    keyboard = types.ReplyKeyboardMarkup(keyboard=kb)
+                    video_file_id = message.video.file_id
+                    await message.send_video(video=video_file_id, caption="Botga text qoshmoqchimisiz?",
+                                         reply_markup=keyboard)
+            except:
+                if user_message == "Orqaga qaytish ❌":
+                    return
+                if user_message == "Xa":
+                    sending_text_to_video[user_id] = True
+                    await message.reply("Textni tashlang")
+                if user_message == "Yoq":
+                    await message.send_video(video=video_file_id)
+                if user_id in sending_text_to_video:
+                    await message.send_video(video=video_file_id, reply_markup=keyboard, caption=user_message)
+        if user_message == "Text 📝":
+            send_message_text[user_id] = True
+            await message.answer(f"Qanday xabar yuborasiz?")
+        if user_message == "Rasm 🖼":
+            send_message_rasm[user_id] = True
+            await message.answer(f"Qanday xabar yuborasiz?")
+        if user_message == "Video 📹":
+            send_message_video[user_id] = True
+            await message.answer(f"Qanday xabar yuborasiz?")
     if user_id in admin_sessions:
         if user_message == "API boshqaruvi ⚙️" and user_id == ownerId:
             api_control_session[user_id] = True
@@ -412,7 +443,6 @@ async def admin_controller(callback: types.CallbackQuery):
         else:
             await callback.answer("Admin not found.", show_alert=True)
 
-
 @dp.callback_query(lambda callback: callback.data.startswith("api_delete_"))
 async def api_controller(callback: types.CallbackQuery):
     if callback.data.startswith("api_delete_"):
@@ -468,29 +498,6 @@ async def channel_controller(callback: types.CallbackQuery):
             return
         else :
             await callback.answer("Tabrikliman siz hamma kanalga obuna boldingiz")
-            user = callback.from_user
-            if user.id not in all_users:
-                all_users[user.id] = user.first_name
-                active_users[user.id] = user.first_name
-                today_logined_users.append(user.id)
-            if user.id in all_users and user.id in inactive_users:
-                active_users[user.id] = user.first_name
-                inactive_users.remove(user.id)
-            kb = [
-                [
-                    types.KeyboardButton(text="ChatGPT bilan muloqot qilish 🤖"),
-                    types.KeyboardButton(text="Mening ID raqamim 🔍")
-                ],
-            ]
-            if user.id in admin_userIds.keys():
-                kb.append([types.KeyboardButton(text="Admin panel ⚙️")])
-
-            keyboard = types.ReplyKeyboardMarkup(keyboard=kb)
-            await callback.answer(
-                "Assalomu aleykum\n\nBu bot siz uchun ba'zi xizmatlar beradi. Xizmatlarni pasdan tanlashingiz mumkun 😇",
-                reply_markup=keyboard)
-
-
 async def main():
     await dp.start_polling(bot)
 
