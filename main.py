@@ -279,8 +279,8 @@ async def chatgpt(message: types.Message, reload_message ):
         else:
             await message.answer("Error in API response or no text generated.")
     except openai.error.OpenAIError as e:
-        # await bot.send_message(chat_id="@testchanellforbot13",
-        #                        text=f"Botda nosozlik bor iltimos bartaraf eting:\n\n {e}\n\n\n {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        await bot.send_message(chat_id="@testchanellforbot13",
+                               text=f"Botda nosozlik bor iltimos bartaraf eting:\n\n {e}\n\n\n {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         await bot.delete_message(user_id, reload_message.message_id)
         await message.answer(
             f"🤖 Menda xatolik yuz berdi, havotirga o'rin yo'q meni tez orada tuzatishadi.\n\n• Iltimos ozroqdan so'ng urinib ko'ring yoki savolni batafsil va qisqaroq yozing.")
