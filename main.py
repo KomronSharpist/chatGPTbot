@@ -12,7 +12,7 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 from moviepy.editor import VideoFileClip, TextClip, CompositeVideoClip
 
 logging.basicConfig(level=logging.INFO)
-bot = Bot(token="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")
+bot = Bot(token="6440053728:AAFYsc0PcAicgsEOyYQysWi81ig7yYVG2WQ")
 dp = Dispatcher()
 api_keys = {"Komronapi": "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"}
 api_names_iterator = iter(api_keys.keys())
