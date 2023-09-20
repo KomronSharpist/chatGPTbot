@@ -39,7 +39,7 @@ inactive_users = []
 today = datetime.now().date()
 channel_usernames = []
 admin_userIds = {1052097431: "𝙺𝚘𝚖𝚛𝚘𝚗", 1232328054: "Cloud"}
-ownerId = 1052097431
+ownerId = [1232328054, 1052097431]
 
 video_file_id = 0
 chat_id = 0
@@ -143,7 +143,7 @@ async def cmd_start(message: types.Message):
     user = message.from_user
     if user_id in admin_userIds.keys():
         admin_sessions[user_id] = True
-        if user_id == ownerId:
+        if user_id in ownerId:
             owner_sessions[user_id] = True
             kb = [
                 [
@@ -219,7 +219,7 @@ async def handle_message(message: types.Message):
         if user_id in chanel_add_session:
             del chanel_add_session[user_id]
 
-        if user_id == ownerId:
+        if user_id in ownerId:
             owner_sessions[user_id] = True
             kb = [
                 [
@@ -300,7 +300,7 @@ async def admin_control_session_service(message: types.Message):
 async def admin_sessions_service(message: types.Message):
     user_id = message.from_user.id
     user_message = message.text
-    if user_message == "API boshqaruvi ⚙️" and user_id == ownerId:
+    if user_message == "API boshqaruvi ⚙️" and user_id in ownerId:
         api_control_session[user_id] = True
         kb = [
             [
@@ -318,7 +318,7 @@ async def admin_sessions_service(message: types.Message):
         kb = []
         keyboard = types.ReplyKeyboardMarkup(keyboard=kb)
         await message.answer(f"Jonatmoqchi bolgan xabaringizni yuboring?", reply_markup=keyboard)
-    if user_message == "Adminlarni boshqarish" and user_id == ownerId:
+    if user_message == "Adminlarni boshqarish" and user_id in ownerId:
         admin_control_session[user_id] = True
         kb = [
             [
