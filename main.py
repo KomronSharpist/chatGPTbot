@@ -7,8 +7,9 @@ from aiogram import Bot, Dispatcher, types, F
 from aiogram.enums import ChatMemberStatus
 from aiogram.filters.command import Command
 from aiogram.enums.dice_emoji import DiceEmoji
+from aiogram.fsm.context import FSMContext
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, InputFile, PhotoSize, Video, Message, \
-    InputMediaVideo
+    InputMediaVideo, ReplyKeyboardMarkup, KeyboardButton
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from moviepy.editor import VideoFileClip, TextClip, CompositeVideoClip
 
@@ -116,19 +117,19 @@ async def cmd_start(message: types.Message):
         builder.add(types.InlineKeyboardButton(text=f"{channel}", url=f"https://t.me/{channel[1:]}"))
         builder.adjust(1, 1)
     if channel_unsubscribed:
-        builder.add(types.InlineKeyboardButton(text=f"Tekshirish", callback_data="checkSubscription"))
+        builder.add(types.InlineKeyboardButton(text=f"Tekshirish ✅", callback_data="checkSubscription"))
         builder.adjust(1, 1)
-        await message.answer("• Botdan foydalanish uchun avval kanalga obuna bo’ling va Tekshirish tugmasini bosing! \n @TexoAI - sun''iy intellektlar va texnologiyalar haqida eng so''nggi yangiliklarni berib boruvchi kanal",
+        await message.answer("• Botdan foydalanish uchun avval kanalga obuna bo’ling va <b>Tekshirish</b> tugmasini bosing! \n @TexoAI - sun''iy intellektlar va texnologiyalar haqida eng so''nggi yangiliklarni berib boruvchi kanal",
                              reply_markup=builder.as_markup())
         return
     else:
         keyboard = types.ReplyKeyboardRemove()
-        await message.answer("Salom! 👋\n\nMen istalgan mavzu yoki vazifalar bo'yicha ma'lumot va savolingizga javob topishda yordam beradigan chatbotman. Foydalanish uchun esa shunchaki savolni yozishingiz kifoya.\n\nChatbot nimalar qiloladi?\n1. Savolga javob berish va matnni barcha tillarda tarjima qilish;\n2. Istalgan fanlarga oid informatsiyalar ba'zasi;\n3. Matematik misol va masalalarni yechish;\n4. Kod yozib, uni tahrirlash va texnologiya, dasturlash tillari, algoritmlar haqida ma'lumot berish;\n5. She'rlar, hikoyalar, insholar va ijodiy asarlar yozib berish;\n6. Sog'liq-salomatlik, to'g'ri ovqatlanish va fitnes bo'yicha to'g'ri ma'lumot berish.\n\nBot savollarga qanchalik tez javob beradi?\nBir nech soniyadan bir necha daqiqagacha.\n\nBuyruqlar:\n/start - botni qayta ishga tushirish;\n/information - foydalanish qo'llanmasi\n/myid - sizning telegram IDingiz", reply_markup=keyboard)
+        await message.answer("<b>Salom! 👋\n\nMen istalgan mavzu yoki vazifalar bo'yicha ma'lumot va savolingizga javob topishda yordam beradigan chatbotman. Foydalanish uchun esa shunchaki savolni yozishingiz kifoya.\n\nChatbot nimalar qiloladi?</b>\n1. Savolga javob berish va matnni barcha tillarda tarjima qilish;\n2. Istalgan fanlarga oid informatsiyalar ba'zasi;\n3. Matematik misol va masalalarni yechish;\n4. Kod yozib, uni tahrirlash va texnologiya, dasturlash tillari, algoritmlar haqida ma'lumot berish;\n5. She'rlar, hikoyalar, insholar va ijodiy asarlar yozib berish;\n6. Sog'liq-salomatlik, to'g'ri ovqatlanish va fitnes bo'yicha to'g'ri ma'lumot berish.\n\n<b>Bot savollarga qanchalik tez javob beradi?</b>\nBir nech soniyadan bir necha daqiqagacha.\n\n<b>Buyruqlar:</b>\n/start - botni qayta ishga tushirish;\n/information - foydalanish qo'llanmasi", reply_markup=keyboard, parse_mode="HTML")
 
 @dp.message(Command("information"))
 async def cmd_start(message: types.Message):
     keyboard = types.ReplyKeyboardRemove()
-    await message.answer("🤖Bot ChatGPT sun''iy intellektni qo''llab-quvvatlaydi. Foydalanish uchun esa shunchaki savolingizni botga yozing! \n\nFoydalanish qo'llanmasi: \n• Bot sizning istalgan savolingizga suhbatdoshdek javob beradi va barcha tillarda so'zlashishingiz mumkin; \n• Bot faqat 2021-yilgi ma'lumotlarga ega;\n• Notog''ri javob qaytarsa, savolingizni qaytadan batafsilroq yozing.\n\nBuyruqlar: \n/start - botni qayta ishga tushirish;\n/information - foydalanish qo''llanmasi\n/myid - sizning telegram ID ingiz\n\nMurojaat va takliflar uchun:\n @TexnoGPT_support", reply_markup=keyboard)
+    await message.answer("🤖<b>Bot ChatGPT sun''iy intellektni qo''llab-quvvatlaydi. Foydalanish uchun esa shunchaki savolingizni botga yozing! \n\nFoydalanish qo'llanmasi:</b> \n• Bot sizning istalgan savolingizga suhbatdoshdek javob beradi va barcha tillarda so'zlashishingiz mumkin; \n• Bot faqat 2021-yilgi ma'lumotlarga ega;\n• Notog''ri javob qaytarsa, savolingizni qaytadan batafsilroq yozing.\n\n<b>Buyruqlar: </b>\n/start - botni qayta ishga tushirish;\n/information - foydalanish qo''llanmasi\n\n<b>Murojaat va takliflar uchun:</b>\n @TexnoGPT_support", reply_markup=keyboard, parse_mode="HTML")
 
 
 
@@ -158,7 +159,7 @@ async def cmd_start(message: types.Message):
                 [types.KeyboardButton(text="Admin boshqaruvi 👤")],
                 [types.KeyboardButton(text="Orqaga qaytish 🔙")],
             ]
-            keyboard = types.ReplyKeyboardMarkup(keyboard=kb)
+            keyboard = types.ReplyKeyboardMarkup(keyboard=kb, resize_keyboard=True)
             await message.answer(f"Admin panelga xush kelibsiz. Menuni tanlang!", reply_markup=keyboard)
         elif user_id in admin_userIds.keys():
             kb = [
@@ -169,7 +170,7 @@ async def cmd_start(message: types.Message):
                 [types.KeyboardButton(text="Kanal qo'shish ➕")],
                 [types.KeyboardButton(text="Orqaga qaytish 🔙")],
             ]
-            keyboard = types.ReplyKeyboardMarkup(keyboard=kb)
+            keyboard = types.ReplyKeyboardMarkup(keyboard=kb, resize_keyboard=True)
             await message.answer(f"Admin panelga xush kelibsiz. Menuni tanlang!", reply_markup=keyboard)
 
 
@@ -194,7 +195,7 @@ async def handle_message(message: types.Message):
     if channel_unsubscribed:
         builder.add(types.InlineKeyboardButton(text=f"Tekshirish ✅", callback_data="checkSubscription"))
         builder.adjust(1, 1)
-        await message.answer("• Botdan foydalanish uchun avval kanalga obuna bo’ling va Tekshirish tugmasini bosing!", reply_markup=builder.as_markup())
+        await message.answer("• Botdan foydalanish uchun avval kanalga obuna bo’ling va <b>Tekshirish</b> tugmasini bosing!", reply_markup=builder.as_markup(), parse_mode="HTML")
         return
     elif len(channel_unsubscribed) == 0:
         if user.id not in all_users:
@@ -234,7 +235,7 @@ async def handle_message(message: types.Message):
                 [types.KeyboardButton(text="Admin boshqaruvi 👤")],
                 [types.KeyboardButton(text="Orqaga qaytish 🔙")],
             ]
-            keyboard = types.ReplyKeyboardMarkup(keyboard=kb)
+            keyboard = types.ReplyKeyboardMarkup(keyboard=kb, resize_keyboard=True)
             await message.answer(f"Admin panelga xush kelibsiz. Menuni tanlang!", reply_markup=keyboard)
         elif user_id in admin_userIds.keys():
             kb = [
@@ -244,7 +245,7 @@ async def handle_message(message: types.Message):
                 [types.KeyboardButton(text="Kanal qo'shish ➕")],
                 [types.KeyboardButton(text="Orqaga qaytish 🔙")],
             ]
-            keyboard = types.ReplyKeyboardMarkup(keyboard=kb)
+            keyboard = types.ReplyKeyboardMarkup(keyboard=kb, resize_keyboard=True)
             await message.answer(f"Admin panelga xush kelibsiz. Menuni tanlang!", reply_markup=keyboard)
     elif user_id in admin_control_session:
         await admin_control_session_service(message)
@@ -319,7 +320,7 @@ async def admin_sessions_service(message: types.Message):
             ],
             [types.KeyboardButton(text="Orqaga qaytish  🔙")]
         ]
-        keyboard = types.ReplyKeyboardMarkup(keyboard=kb)
+        keyboard = types.ReplyKeyboardMarkup(keyboard=kb, resize_keyboard=True)
         await message.answer(
             "APIni yangilash 🔄",
             reply_markup=keyboard)
@@ -335,7 +336,7 @@ async def admin_sessions_service(message: types.Message):
             ],
             [types.KeyboardButton(text="Orqaga qaytish  🔙")]
         ]
-        keyboard = types.ReplyKeyboardMarkup(keyboard=kb)
+        keyboard = types.ReplyKeyboardMarkup(keyboard=kb, resize_keyboard=True)
         await message.answer(
             "Admin boshqaruvi 👤",
             reply_markup=keyboard)
@@ -354,7 +355,7 @@ async def admin_sessions_service(message: types.Message):
             ],
             [types.KeyboardButton(text="Orqaga qaytish  🔙")]
         ]
-        keyboard = types.ReplyKeyboardMarkup(keyboard=kb)
+        keyboard = types.ReplyKeyboardMarkup(keyboard=kb, resize_keyboard=True)
         await message.answer(
             "Kanal qo'shish ➕",
             reply_markup=keyboard)
@@ -363,7 +364,7 @@ async def admin_sessions_service(message: types.Message):
             del owner_sessions[user_id]
         del admin_sessions[user_id]
         keyboard = types.ReplyKeyboardRemove()
-        await message.answer("Salom! 👋\n\nMen istalgan mavzu yoki vazifalar bo'yicha ma'lumot va savolingizga javob topishda yordam beradigan chatbotman. Foydalanish uchun esa shunchaki savolni yozishingiz kifoya.\n\nChatbot nimalar qiloladi?\n1. Savolga javob berish va matnni barcha tillarda tarjima qilish;\n2. Istalgan fanlarga oid informatsiyalar ba'zasi;\n3. Matematik misol va masalalarni yechish;\n4. Kod yozib, uni tahrirlash va texnologiya, dasturlash tillari, algoritmlar haqida ma'lumot berish;\n5. She'rlar, hikoyalar, insholar va ijodiy asarlar yozib berish;\n6. Sog'liq-salomatlik, to'g'ri ovqatlanish va fitnes bo'yicha to'g'ri ma'lumot berish.\n\nBot savollarga qanchalik tez javob beradi?\nBir nech soniyadan bir necha daqiqagacha.\n\nBuyruqlar:\n/start - botni qayta ishga tushirish;\n/information - foydalanish qo'llanmasi\n/myid - sizning telegram IDingiz", reply_markup=keyboard)
+        await message.answer("<b>Salom! 👋\n\nMen istalgan mavzu yoki vazifalar bo'yicha ma'lumot va savolingizga javob topishda yordam beradigan chatbotman. Foydalanish uchun esa shunchaki savolni yozishingiz kifoya.\n\nChatbot nimalar qiloladi?</b>\n1. Savolga javob berish va matnni barcha tillarda tarjima qilish;\n2. Istalgan fanlarga oid informatsiyalar ba'zasi;\n3. Matematik misol va masalalarni yechish;\n4. Kod yozib, uni tahrirlash va texnologiya, dasturlash tillari, algoritmlar haqida ma'lumot berish;\n5. She'rlar, hikoyalar, insholar va ijodiy asarlar yozib berish;\n6. Sog'liq-salomatlik, to'g'ri ovqatlanish va fitnes bo'yicha to'g'ri ma'lumot berish.\n\n<b>Bot savollarga qanchalik tez javob beradi?</b>\nBir nech soniyadan bir necha daqiqagacha.\n\n<b>Buyruqlar:</b>\n/start - botni qayta ishga tushirish;\n/information - foydalanish qo'llanmasi", reply_markup=keyboard, parse_mode="HTML")
 
 async def send_message_service(message: types.Message):
     if message.video:
@@ -386,6 +387,7 @@ async def send_message_service(message: types.Message):
             )
     await message.answer("Xabaringiz yuborildi ✅")
     del send_message[message.from_user.id]
+
 
 async def api_control_session_service(message: types.Message):
     user_id = message.from_user.id
@@ -500,10 +502,7 @@ async def channel_controller(callback: types.CallbackQuery):
             builder.add(types.InlineKeyboardButton(text=f"{channel}", url=f"https://t.me/{channel[1:]}"))
             builder.adjust(1, 1)
         if channel_unsubscribed:
-            builder.add(types.InlineKeyboardButton(text=f"Obuna boldim tekshirish", callback_data="checkSubscription"))
-            builder.adjust(1, 1)
-            await callback.message.answer("• Botdan foydalanish uchun avval kanalga obuna bo’ling va Tekshirish tugmasini bosing!",
-                                 reply_markup=builder.as_markup())
+            await callback.answer("• Botdan foydalanish uchun avval kanalga obuna bo’ling va Tekshirish tugmasini bosing!")
             return
         else:
             user = callback.from_user
@@ -515,7 +514,7 @@ async def channel_controller(callback: types.CallbackQuery):
                 active_users[user.id] = user.first_name
                 inactive_users.remove(user.id)
             await callback.message.answer(
-                    "Salom! 👋\n\nMen istalgan mavzu yoki vazifalar bo'yicha ma'lumot va savolingizga javob topishda yordam beradigan chatbotman. Foydalanish uchun esa shunchaki savolni yozishingiz kifoya.\n\nChatbot nimalar qiloladi?\n1. Savolga javob berish va matnni barcha tillarda tarjima qilish;\n2. Istalgan fanlarga oid informatsiyalar ba'zasi;\n3. Matematik misol va masalalarni yechish;\n4. Kod yozib, uni tahrirlash va texnologiya, dasturlash tillari, algoritmlar haqida ma'lumot berish;\n5. She'rlar, hikoyalar, insholar va ijodiy asarlar yozib berish;\n6. Sog'liq-salomatlik, to'g'ri ovqatlanish va fitnes bo'yicha to'g'ri ma'lumot berish.\n\nBot savollarga qanchalik tez javob beradi?\nBir nech soniyadan bir necha daqiqagacha.\n\nBuyruqlar:\n/start - botni qayta ishga tushirish;\n/information - foydalanish qo'llanmasi\n/myid - sizning telegram IDingiz",)
+                    "<b>Salom! 👋\n\nMen istalgan mavzu yoki vazifalar bo'yicha ma'lumot va savolingizga javob topishda yordam beradigan chatbotman. Foydalanish uchun esa shunchaki savolni yozishingiz kifoya.\n\nChatbot nimalar qiloladi?</b>\n1. Savolga javob berish va matnni barcha tillarda tarjima qilish;\n2. Istalgan fanlarga oid informatsiyalar ba'zasi;\n3. Matematik misol va masalalarni yechish;\n4. Kod yozib, uni tahrirlash va texnologiya, dasturlash tillari, algoritmlar haqida ma'lumot berish;\n5. She'rlar, hikoyalar, insholar va ijodiy asarlar yozib berish;\n6. Sog'liq-salomatlik, to'g'ri ovqatlanish va fitnes bo'yicha to'g'ri ma'lumot berish.\n\n<b>Bot savollarga qanchalik tez javob beradi?</b>\nBir nech soniyadan bir necha daqiqagacha.\n\n<b>Buyruqlar:</b>\n/start - botni qayta ishga tushirish;\n/information - foydalanish qo'llanmasi", parse_mode="HTML")
 
 
 async def main():
