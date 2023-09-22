@@ -6,12 +6,7 @@ import openai
 from aiogram import Bot, Dispatcher, types, F
 from aiogram.enums import ChatMemberStatus
 from aiogram.filters.command import Command
-from aiogram.enums.dice_emoji import DiceEmoji
-from aiogram.fsm.context import FSMContext
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, InputFile, PhotoSize, Video, Message, \
-    InputMediaVideo, ReplyKeyboardMarkup, KeyboardButton
 from aiogram.utils.keyboard import InlineKeyboardBuilder
-from moviepy.editor import VideoFileClip, TextClip, CompositeVideoClip
 
 logging.basicConfig(level=logging.INFO)
 bot = Bot(token="6440053728:AAFYsc0PcAicgsEOyYQysWi81ig7yYVG2WQ")
@@ -119,8 +114,8 @@ async def cmd_start(message: types.Message):
     if channel_unsubscribed:
         builder.add(types.InlineKeyboardButton(text=f"Tekshirish ✅", callback_data="checkSubscription"))
         builder.adjust(1, 1)
-        await message.answer("• Botdan foydalanish uchun avval kanalga obuna bo’ling va <b>Tekshirish</b> tugmasini bosing! \n @TexoAI - sun''iy intellektlar va texnologiyalar haqida eng so''nggi yangiliklarni berib boruvchi kanal",
-                             reply_markup=builder.as_markup())
+        await message.answer("• Botdan foydalanish uchun avval kanalga obuna bo’ling va <b>Tekshirish</b> tugmasini bosing! \n\n @TexnoAI - sun'iy intellektlar va texnologiyalar haqida eng so'nggi yangiliklarni berib boruvchi kanal",
+                             reply_markup=builder.as_markup(), parse_mode="HTML")
         return
     else:
         keyboard = types.ReplyKeyboardRemove()
@@ -129,7 +124,7 @@ async def cmd_start(message: types.Message):
 @dp.message(Command("information"))
 async def cmd_start(message: types.Message):
     keyboard = types.ReplyKeyboardRemove()
-    await message.answer("🤖<b>Bot ChatGPT sun''iy intellektni qo''llab-quvvatlaydi. Foydalanish uchun esa shunchaki savolingizni botga yozing! \n\nFoydalanish qo'llanmasi:</b> \n• Bot sizning istalgan savolingizga suhbatdoshdek javob beradi va barcha tillarda so'zlashishingiz mumkin; \n• Bot faqat 2021-yilgi ma'lumotlarga ega;\n• Notog''ri javob qaytarsa, savolingizni qaytadan batafsilroq yozing.\n\n<b>Buyruqlar: </b>\n/start - botni qayta ishga tushirish;\n/information - foydalanish qo''llanmasi\n\n<b>Murojaat va takliflar uchun:</b>\n @TexnoGPT_support", reply_markup=keyboard, parse_mode="HTML")
+    await message.answer("🤖<b>Bot ChatGPT sun'iy intellektni qo'llab-quvvatlaydi. Foydalanish uchun esa shunchaki savolingizni botga yozing! \n\nFoydalanish qo'llanmasi:</b> \n• Bot sizning istalgan savolingizga suhbatdoshdek javob beradi va barcha tillarda so'zlashishingiz mumkin; \n• Bot faqat 2021-yilgi ma'lumotlarga ega;\n• Notog'ri javob qaytarsa, savolingizni qaytadan batafsilroq yozing.\n\n<b>Buyruqlar: </b>\n/start - botni qayta ishga tushirish;\n/information - foydalanish qo'llanmasi\n\n<b>Murojaat va takliflar uchun:</b>\n @TexnoGPT_support", reply_markup=keyboard, parse_mode="HTML")
 
 
 
@@ -502,7 +497,7 @@ async def channel_controller(callback: types.CallbackQuery):
             builder.add(types.InlineKeyboardButton(text=f"{channel}", url=f"https://t.me/{channel[1:]}"))
             builder.adjust(1, 1)
         if channel_unsubscribed:
-            await callback.answer("• Botdan foydalanish uchun avval kanalga obuna bo’ling va Tekshirish tugmasini bosing!")
+            await callback.answer("• Botdan foydalanish uchun avval kanalga obuna bo’ling.")
             return
         else:
             user = callback.from_user
@@ -513,6 +508,8 @@ async def channel_controller(callback: types.CallbackQuery):
             if user.id in all_users and user.id in inactive_users:
                 active_users[user.id] = user.first_name
                 inactive_users.remove(user.id)
+            await bot.delete_message(chat_id=callback.message.chat.id, message_id=callback.message.message_id)
+            await callback.answer("")
             await callback.message.answer(
                     "<b>Salom! 👋\n\nMen istalgan mavzu yoki vazifalar bo'yicha ma'lumot va savolingizga javob topishda yordam beradigan chatbotman. Foydalanish uchun esa shunchaki savolni yozishingiz kifoya.\n\nChatbot nimalar qiloladi?</b>\n1. Savolga javob berish va matnni barcha tillarda tarjima qilish;\n2. Istalgan fanlarga oid informatsiyalar ba'zasi;\n3. Matematik misol va masalalarni yechish;\n4. Kod yozib, uni tahrirlash va texnologiya, dasturlash tillari, algoritmlar haqida ma'lumot berish;\n5. She'rlar, hikoyalar, insholar va ijodiy asarlar yozib berish;\n6. Sog'liq-salomatlik, to'g'ri ovqatlanish va fitnes bo'yicha to'g'ri ma'lumot berish.\n\n<b>Bot savollarga qanchalik tez javob beradi?</b>\nBir nech soniyadan bir necha daqiqagacha.\n\n<b>Buyruqlar:</b>\n/start - botni qayta ishga tushirish;\n/information - foydalanish qo'llanmasi", parse_mode="HTML")
 
