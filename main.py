@@ -1,7 +1,8 @@
 import asyncio
 import logging
 import os
-from datetime import datetime
+from collections import defaultdict
+from datetime import datetime, date
 import openai
 from aiogram import Bot, Dispatcher, types, F
 from aiogram.enums import ChatMemberStatus
@@ -9,7 +10,8 @@ from aiogram.filters.command import Command
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 logging.basicConfig(level=logging.INFO)
-bot = Bot(token="6440053728:AAFYsc0PcAicgsEOyYQysWi81ig7yYVG2WQ")
+bot = Bot(token="5701012090:AAGRTr0XVls7yrfcyX1XaP1btLV4D9mWYjY")
+# bot = Bot(token="6440053728:AAFYsc0PcAicgsEOyYQysWi81ig7yYVG2WQ")
 dp = Dispatcher()
 api_keys = {"Komronapi": "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"}
 api_names_iterator = iter(api_keys.keys())
@@ -37,9 +39,25 @@ today = datetime.now().date()
 channel_usernames = []
 admin_userIds = {1052097431: "𝙺𝚘𝚖𝚛𝚘𝚗", 1232328054: "Cloud"}
 ownerId = [1232328054, 1052097431]
+user_request_counts = defaultdict(int)
+user_last_request = {}
 
 video_file_id = 0
 chat_id = 0
+
+
+def is_daily_limit_exceeded(user_id):
+    today = date.today()
+    if user_id in user_last_request and user_last_request[user_id] == today:
+        if user_request_counts[user_id] >= 50:
+            return True
+    else:
+        user_request_counts[user_id] = 0
+        user_last_request[user_id] = today
+        return False
+
+def increment_request_count(user_id):
+    user_request_counts[user_id] += 1
 
 def get_current_api_key():
     if len(api_keys) > 1:
@@ -257,23 +275,26 @@ async def handle_message(message: types.Message):
         await chatgpt(message, reload_message)
 
 
-async def chatgpt(message: types.Message, reload_message ):
+async def chatgpt(message: types.Message, reload_message):
     user_message = message.text
     user_id = message.from_user.id
     try:
-        openai.api_key = get_current_api_key()
-        response = openai.Completion.create(
-            engine="text-davinci-003",
-            prompt=user_message,
-            max_tokens=1000,
-            temperature=0.7,
-        )
-        if response and response.choices and response.choices[0].text:
-            generated_text = response.choices[0].text
-            await message.answer(generated_text)
-            await bot.delete_message(user_id, reload_message.message_id)
+        if is_daily_limit_exceeded(user_id):
+            await message.answer(
+                f"Afsuski sizning kunlik limitingiz tugadi. Siz botdan ertaga foydalanishingiz mumkun.")
         else:
-            await message.answer("Error in API response or no text generated.")
+            openai.api_key = get_current_api_key()
+            response = openai.Completion.create(
+                engine="text-davinci-003",
+                prompt=user_message,
+                max_tokens=1000,
+                temperature=0.7,
+            )
+            if response and response.choices and response.choices[0].text:
+                generated_text = response.choices[0].text
+                await message.answer(generated_text)
+                await bot.delete_message(user_id, reload_message.message_id)
+            increment_request_count(user_id)
     except openai.error.OpenAIError as e:
         await bot.send_message(chat_id="@testchanellforbot13",
                                text=f"Botda nosozlik bor iltimos bartaraf eting:\n\n {e}\n\n\n {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
