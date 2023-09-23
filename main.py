@@ -10,8 +10,7 @@ from aiogram.filters.command import Command
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 logging.basicConfig(level=logging.INFO)
-bot = Bot(token="5701012090:AAGRTr0XVls7yrfcyX1XaP1btLV4D9mWYjY")
-# bot = Bot(token="6440053728:AAFYsc0PcAicgsEOyYQysWi81ig7yYVG2WQ")
+bot = Bot(token="6440053728:AAFYsc0PcAicgsEOyYQysWi81ig7yYVG2WQ")
 dp = Dispatcher()
 api_keys = {"Komronapi": "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"}
 api_names_iterator = iter(api_keys.keys())
