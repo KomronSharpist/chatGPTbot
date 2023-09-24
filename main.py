@@ -8,6 +8,7 @@ from aiogram import Bot, Dispatcher, types, F
 from aiogram.enums import ChatMemberStatus
 from aiogram.filters.command import Command
 from aiogram.utils.keyboard import InlineKeyboardBuilder
+from aiogram import Bot, types
 
 logging.basicConfig(level=logging.INFO)
 bot = Bot(token="6440053728:AAFYsc0PcAicgsEOyYQysWi81ig7yYVG2WQ")
@@ -24,6 +25,7 @@ chat_sessions = {}
 admin_sessions = {}
 owner_sessions = {}
 send_message = {}
+send_to_all = {}
 send_message_text = {}
 send_message_rasm = {}
 send_message_video = {}
@@ -40,7 +42,7 @@ admin_userIds = {1052097431: "𝙺𝚘𝚖𝚛𝚘𝚗", 1232328054: "Cloud"}
 ownerId = [1232328054, 1052097431]
 user_request_counts = defaultdict(int)
 user_last_request = {}
-
+reklam = ""
 video_file_id = 0
 chat_id = 0
 
@@ -48,7 +50,7 @@ chat_id = 0
 def is_daily_limit_exceeded(user_id):
     today = date.today()
     if user_id in user_last_request and user_last_request[user_id] == today:
-        if user_request_counts[user_id] >= 50:
+        if user_request_counts[user_id] >= 40:
             return True
     else:
         user_request_counts[user_id] = 0
@@ -270,24 +272,25 @@ async def handle_message(message: types.Message):
     elif user_id in admin_sessions:
         await admin_sessions_service(message)
     else:
-        reload_message = await message.answer("⏳ Javobni tayyorlayapman…")
-        await chatgpt(message, reload_message)
+        await chatgpt(message)
 
 
-async def chatgpt(message: types.Message, reload_message):
+async def chatgpt(message: types.Message):
+    global reload_message
     user_message = message.text
     user_id = message.from_user.id
     try:
         if is_daily_limit_exceeded(user_id):
             await message.answer(
-                f"Afsuski sizning kunlik limitingiz tugadi. Siz botdan ertaga foydalanishingiz mumkun.")
+                f"😔 <b>Afsuski kunlik 40 ta so'rov limitiga yetdingiz! Limit har kuni yangilanadi.</b>", parse_mode="HTML")
         else:
+            reload_message = await message.answer("⏳ Javobni tayyorlayapman…")
             openai.api_key = get_current_api_key()
             response = openai.Completion.create(
                 engine="text-davinci-003",
                 prompt=user_message,
                 max_tokens=1000,
-                temperature=0.7,
+                temperature=0.4,
             )
             if response and response.choices and response.choices[0].text:
                 generated_text = response.choices[0].text
@@ -295,9 +298,9 @@ async def chatgpt(message: types.Message, reload_message):
                 await bot.delete_message(user_id, reload_message.message_id)
             increment_request_count(user_id)
     except openai.error.OpenAIError as e:
+        await bot.delete_message(user_id, reload_message.message_id)
         await bot.send_message(chat_id="@testchanellforbot13",
                                text=f"Botda nosozlik bor iltimos bartaraf eting:\n\n {e}\n\n\n {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-        await bot.delete_message(user_id, reload_message.message_id)
         await message.answer(
             f"🤖 Menda xatolik yuz berdi, havotirga o'rin yo'q meni tez orada tuzatishadi.\n\n• Iltimos ozroqdan so'ng urinib ko'ring yoki savolni batafsil va qisqaroq yozing.")
 
@@ -382,26 +385,33 @@ async def admin_sessions_service(message: types.Message):
         await message.answer("<b>Salom! 👋\n\nMen istalgan mavzu yoki vazifalar bo'yicha ma'lumot va savolingizga javob topishda yordam beradigan chatbotman. Foydalanish uchun esa shunchaki savolni yozishingiz kifoya.\n\nChatbot nimalar qiloladi?</b>\n1. Savolga javob berish va matnni barcha tillarda tarjima qilish;\n2. Istalgan fanlarga oid informatsiyalar ba'zasi;\n3. Matematik misol va masalalarni yechish;\n4. Kod yozib, uni tahrirlash va texnologiya, dasturlash tillari, algoritmlar haqida ma'lumot berish;\n5. She'rlar, hikoyalar, insholar va ijodiy asarlar yozib berish;\n6. Sog'liq-salomatlik, to'g'ri ovqatlanish va fitnes bo'yicha to'g'ri ma'lumot berish.\n\n<b>Bot savollarga qanchalik tez javob beradi?</b>\nBir nech soniyadan bir necha daqiqagacha.\n\n<b>Buyruqlar:</b>\n/start - botni qayta ishga tushirish;\n/information - foydalanish qo'llanmasi", reply_markup=keyboard, parse_mode="HTML")
 
 async def send_message_service(message: types.Message):
+    global reklam
+    builder = InlineKeyboardBuilder()
     if message.video:
+        reklam = message
         video = message.video
         caption = message.caption
 
-        for user_id in active_users:
-            await bot.send_video(
-                chat_id=user_id,
-                video=video.file_id,
-                caption=caption,
-                disable_notification=True,
-            )
+        await bot.send_video(
+            chat_id=message.from_user.id,
+            video=video.file_id,
+            caption=caption,
+            disable_notification=True,
+            parse_mode="HTML"
+        )
     else:
-        for user in list(active_users.items()):
-            await bot.copy_message(
-                chat_id=user[0],
-                from_chat_id=message.chat.id,
-                message_id=message.message_id
-            )
-    await message.answer("Xabaringiz yuborildi ✅")
-    del send_message[message.from_user.id]
+        reklam = message
+        await bot.copy_message(
+            chat_id=message.from_user.id,
+            from_chat_id=message.chat.id,
+            message_id=message.message_id,
+            parse_mode="HTML"
+        )
+
+    builder.add(types.InlineKeyboardButton(text=f"Xa", callback_data=f"jonatish"))
+    builder.add(types.InlineKeyboardButton(text=f"Yoq", callback_data=f"ochirish"))
+    builder.adjust(2, 2)
+    await message.answer("Xabarni jonatmoqchimisiz?", reply_markup=builder.as_markup())
 
 
 async def api_control_session_service(message: types.Message):
@@ -448,6 +458,33 @@ async def chanel_control_session_service(message: types.Message):
         chanel_add_session[user_id] = True
         await message.answer("Qoshmoqchi bolgan kanalingizni jonating. Misol : @kanal", )
 
+@dp.callback_query(lambda callback_query: callback_query.data.startswith(("jonatish", "ochirish")))
+async def send_message_controller(callback: types.CallbackQuery):
+    global reklam
+    if callback.data == "jonatish":
+        if isinstance(reklam, types.Message) and reklam.video:
+            video = reklam.video
+            caption = reklam.caption
+
+            for user_id in active_users:
+                await bot.send_video(
+                    chat_id=user_id,
+                    video=video.file_id,
+                    caption=caption,
+                    disable_notification=True,
+                )
+        elif isinstance(reklam, types.Message):
+            for user in list(active_users.items()):
+                await bot.copy_message(
+                    chat_id=user[0],
+                    from_chat_id=reklam.chat.id,
+                    message_id=reklam.message_id
+                )
+        del send_message[callback.from_user.id]
+    else:
+        del send_message[callback.from_user.id]
+
+
 @dp.callback_query(lambda callback: callback.data.startswith("admin_delete_"))
 async def admin_controller(callback: types.CallbackQuery):
     if callback.data.startswith("admin_delete_"):
@@ -466,7 +503,6 @@ async def admin_controller(callback: types.CallbackQuery):
             await callback.answer(f"Deleting admin: {admin}", show_alert=True)
         else:
             await callback.answer("Admin not found.", show_alert=True)
-
 
 @dp.callback_query(lambda callback: callback.data.startswith("api_delete_"))
 async def api_controller(callback: types.CallbackQuery):
