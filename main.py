@@ -13,7 +13,7 @@ from aiogram import Bot, types
 logging.basicConfig(level=logging.INFO)
 bot = Bot(token="6440053728:AAFYsc0PcAicgsEOyYQysWi81ig7yYVG2WQ")
 dp = Dispatcher()
-api_keys = {"Komronapi": "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"}
+api_keys = {"Komronapi": "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"}
 api_names_iterator = iter(api_keys.keys())
 api_add_session = {}
 api_control_session = {}
@@ -24,12 +24,9 @@ admin_add_session = {}
 chat_sessions = {}
 admin_sessions = {}
 owner_sessions = {}
-send_message = {}
-send_to_all = {}
-send_message_text = {}
-send_message_rasm = {}
-send_message_video = {}
-sending_text_to_video = {}
+send_message_session = {}
+inline_keyboard_session = {}
+add_inline_keyboard_session = {}
 logging.basicConfig(level=logging.INFO)
 all_users = {}
 active_users = {}
@@ -43,6 +40,7 @@ ownerId = [1232328054, 1052097431]
 user_request_counts = defaultdict(int)
 user_last_request = {}
 reklam = ""
+reklamBuilder = InlineKeyboardBuilder()
 video_file_id = 0
 chat_id = 0
 
@@ -80,8 +78,8 @@ async def is_subscribed(user_id, channel_username):
         return False
 async def check_user_reachability(user_id):
     try:
-        sent_message = await bot.send_message(chat_id=user_id[0],text="Botni block qilmaganingiz tekshirilmoqda, bu habarga etibor bermang. Tushunganingiz uchun raxmat 😇")
-        await bot.delete_message(user_id[0], sent_message.message_id)
+        send_message_session = await bot.send_message(chat_id=user_id[0],text="Botni block qilmaganingiz tekshirilmoqda, bu habarga etibor bermang. Tushunganingiz uchun raxmat 😇")
+        await bot.delete_message(user_id[0], send_message_session.message_id)
     except Exception as e:
         del active_users[user_id[0]]
         inactive_users.append(user_id)
@@ -190,7 +188,7 @@ async def cmd_start(message: types.Message):
 
 @dp.message()
 async def handle_message(message: types.Message):
-    global new_api_key, last_api_key_update, video_file_id
+    global new_api_key, last_api_key_update, video_file_id, reklam, reklamBuilder
     user_id = message.from_user.id
     user = message.from_user
     user_message = message.text
@@ -220,21 +218,26 @@ async def handle_message(message: types.Message):
             active_users[user.id] = user.first_name
             inactive_users.remove(user.id)
     if user_message == "Orqaga qaytish  🔙":
+        reklam = ""
+        reklamBuilder = InlineKeyboardBuilder()
+        if user_id in send_message_session:
+            del send_message_session[user_id]
+        if user_id in add_inline_keyboard_session:
+            del add_inline_keyboard_session[user_id]
+        if user_id in inline_keyboard_session:
+            del inline_keyboard_session[user_id]
         if user_id in api_control_session:
             del api_control_session[user_id]
         if user_id in api_add_session:
             del api_add_session[user_id]
-
         if user_id in admin_control_session:
             del admin_control_session[user_id]
         if user_id in admin_add_session:
             del admin_add_session[user_id]
-
         if user_id in chanel_control_session:
             del chanel_control_session[user_id]
         if user_id in chanel_add_session:
             del chanel_add_session[user_id]
-
         if user_id in ownerId:
             owner_sessions[user_id] = True
             kb = [
@@ -263,7 +266,86 @@ async def handle_message(message: types.Message):
             await message.answer(f"Admin panelga xush kelibsiz. Menuni tanlang!", reply_markup=keyboard)
     elif user_id in admin_control_session:
         await admin_control_session_service(message)
-    elif user_id in send_message:
+    elif user_id in inline_keyboard_session:
+        if user_message == "Qo'shish ✅":
+            add_inline_keyboard_session[user_id] = True
+            kb = [
+                [
+                    types.KeyboardButton(text="Bekor qilish ❌"),
+                ]
+            ]
+            keyboard = types.ReplyKeyboardMarkup(keyboard=kb, resize_keyboard=True)
+            await message.answer("Kanal nomi*Kanal sslikasi\nKanal nomi*Kanal sslikasi\n...\n\nIltimos shu ko`rinishda kiriting", reply_markup=keyboard)
+        elif user_message == "Tashlab o'tish ❌":
+            kb = [
+                [
+                    types.KeyboardButton(text="Yuborish ✅"),
+                    types.KeyboardButton(text="Bekor qilish ❌"),
+                ]
+            ]
+            keyboard = types.ReplyKeyboardMarkup(keyboard=kb, resize_keyboard=True)
+            await message.answer("Xabaringiz to'g'rimi? Agarda to'g'ri bo'lsa \"Yuborish ✅\" tugmasini bosing aks holda \"Bekor qilish ❌\"ni bosing",
+                                 reply_markup=keyboard)
+        elif user_message == "Yuborish ✅":
+            await send_message_controller(user_id)
+            kb = [
+                [
+                    types.KeyboardButton(text="Orqaga qaytish  🔙"),
+                ]
+            ]
+            keyboard = types.ReplyKeyboardMarkup(keyboard=kb, resize_keyboard=True)
+            await message.answer(
+                "Xabaringiz yuborildi ✅",
+                reply_markup=keyboard)
+        elif user_message == "Bekor qilish ❌":
+            kb = [
+                [
+                    types.KeyboardButton(text="Orqaga qaytish  🔙"),
+                ]
+            ]
+            keyboard = types.ReplyKeyboardMarkup(keyboard=kb, resize_keyboard=True)
+            await message.answer(
+                "Xabaringiz ochirildi 😕",
+                reply_markup=keyboard)
+        elif user_id in add_inline_keyboard_session:
+            keyboards = user_message.split("\n")
+            for keyboard in keyboards:
+                name = keyboard.split("*")[0]
+                url = keyboard.split("*")[1]
+                reklamBuilder.add(types.InlineKeyboardButton(text=f"{name}", url=f"{url}"))
+                reklamBuilder.adjust(1, 1)
+            if isinstance(reklam, types.Message) and reklam.video:
+                video = reklam.video
+                caption = reklam.caption
+
+                for user_id in active_users:
+                    await bot.send_video(
+                        chat_id=user_id,
+                        video=video.file_id,
+                        caption=caption,
+                        disable_notification=True,
+                        reply_markup=reklamBuilder.as_markup()
+                    )
+            elif isinstance(reklam, types.Message):
+                for user in list(active_users.items()):
+                    await bot.copy_message(
+                        chat_id=user[0],
+                        from_chat_id=reklam.chat.id,
+                        message_id=reklam.message_id,
+                        reply_markup=reklamBuilder.as_markup()
+                    )
+            kb = [
+                [
+                    types.KeyboardButton(text="Yuborish ✅"),
+                    types.KeyboardButton(text="Bekor qilish ❌"),
+                ]
+            ]
+            keyboard = types.ReplyKeyboardMarkup(keyboard=kb, resize_keyboard=True)
+            await message.answer(
+                "Xabaringiz to'g'rimi? Agarda to'g'ri bo'lsa \"Yuborish ✅\" tugmasini bosing aks holda \"Bekor qilish ❌\"ni bosing",
+                reply_markup=keyboard)
+
+    elif user_id in send_message_session:
         await send_message_service(message)
     elif user_id in api_control_session:
         await api_control_session_service(message)
@@ -286,14 +368,12 @@ async def chatgpt(message: types.Message):
         else:
             reload_message = await message.answer("⏳ Javobni tayyorlayapman…")
             openai.api_key = get_current_api_key()
-            response = openai.Completion.create(
-                engine="text-davinci-003",
-                prompt=user_message,
-                max_tokens=1000,
-                temperature=0.4,
+            response = openai.ChatCompletion.create(
+                model="gpt-3.5-turbo",
+                messages=[{"role": "user", "content": user_message}]
             )
-            if response and response.choices and response.choices[0].text:
-                generated_text = response.choices[0].text
+            if response and response.choices and response.choices[0].message.content:
+                generated_text = response.choices[0].message.content
                 await message.answer(generated_text)
                 await bot.delete_message(user_id, reload_message.message_id)
             increment_request_count(user_id)
@@ -343,8 +423,12 @@ async def admin_sessions_service(message: types.Message):
             "APIni yangilash 🔄",
             reply_markup=keyboard)
     if user_message == "Xabar yuborish ✉️":
-        send_message[user_id] = True
-        await message.answer(f"Jonatmoqchi bolgan xabaringizni yuboring?")
+        send_message_session[user_id] = True
+        kb = [
+            [types.KeyboardButton(text="Orqaga qaytish  🔙")]
+        ]
+        keyboard = types.ReplyKeyboardMarkup(keyboard=kb, resize_keyboard=True)
+        await message.answer(f"Marhamat xabaringizni yuborishingiz mumkin", reply_markup=keyboard)
     if user_message == "Admin boshqaruvi 👤" and user_id in ownerId:
         admin_control_session[user_id] = True
         kb = [
@@ -386,7 +470,6 @@ async def admin_sessions_service(message: types.Message):
 
 async def send_message_service(message: types.Message):
     global reklam
-    builder = InlineKeyboardBuilder()
     if message.video:
         reklam = message
         video = message.video
@@ -408,10 +491,15 @@ async def send_message_service(message: types.Message):
             parse_mode="HTML"
         )
 
-    builder.add(types.InlineKeyboardButton(text=f"Xa", callback_data=f"jonatish"))
-    builder.add(types.InlineKeyboardButton(text=f"Yoq", callback_data=f"ochirish"))
-    builder.adjust(2, 2)
-    await message.answer("Xabarni jonatmoqchimisiz?", reply_markup=builder.as_markup())
+    kb = [
+        [
+            types.KeyboardButton(text="Qo'shish ✅"),
+            types.KeyboardButton(text="Tashlab o'tish ❌"),
+        ]
+    ]
+    keyboard = types.ReplyKeyboardMarkup(keyboard=kb, resize_keyboard=True)
+    await message.answer("Xabaringiz saqlandi. Xabar tagiga keyboard reklama qo'shasizmi?", reply_markup=keyboard)
+    inline_keyboard_session[message.from_user.id] = True
 
 
 async def api_control_session_service(message: types.Message):
@@ -458,31 +546,29 @@ async def chanel_control_session_service(message: types.Message):
         chanel_add_session[user_id] = True
         await message.answer("Qoshmoqchi bolgan kanalingizni jonating. Misol : @kanal", )
 
-@dp.callback_query(lambda callback_query: callback_query.data.startswith(("jonatish", "ochirish")))
-async def send_message_controller(callback: types.CallbackQuery):
+async def send_message_controller(userId):
     global reklam
-    if callback.data == "jonatish":
-        if isinstance(reklam, types.Message) and reklam.video:
-            video = reklam.video
-            caption = reklam.caption
+    if isinstance(reklam, types.Message) and reklam.video:
+        video = reklam.video
+        caption = reklam.caption
 
-            for user_id in active_users:
-                await bot.send_video(
-                    chat_id=user_id,
-                    video=video.file_id,
-                    caption=caption,
-                    disable_notification=True,
-                )
-        elif isinstance(reklam, types.Message):
-            for user in list(active_users.items()):
-                await bot.copy_message(
-                    chat_id=user[0],
-                    from_chat_id=reklam.chat.id,
-                    message_id=reklam.message_id
-                )
-        del send_message[callback.from_user.id]
-    else:
-        del send_message[callback.from_user.id]
+        for user_id in active_users:
+            await bot.send_video(
+                chat_id=user_id,
+                video=video.file_id,
+                caption=caption,
+                disable_notification=True,
+                reply_markup=reklamBuilder.as_markup()
+            )
+    elif isinstance(reklam, types.Message):
+        for user in list(active_users.items()):
+            await bot.copy_message(
+                chat_id=user[0],
+                from_chat_id=reklam.chat.id,
+                message_id=reklam.message_id,
+                reply_markup=reklamBuilder.as_markup()
+            )
+    del send_message_session[userId]
 
 
 @dp.callback_query(lambda callback: callback.data.startswith("admin_delete_"))
@@ -569,8 +655,14 @@ async def channel_controller(callback: types.CallbackQuery):
             await callback.message.answer(
                     "<b>Salom! 👋\n\nMen istalgan mavzu yoki vazifalar bo'yicha ma'lumot va savolingizga javob topishda yordam beradigan chatbotman. Foydalanish uchun esa shunchaki savolni yozishingiz kifoya.\n\nChatbot nimalar qiloladi?</b>\n1. Savolga javob berish va matnni barcha tillarda tarjima qilish;\n2. Istalgan fanlarga oid informatsiyalar ba'zasi;\n3. Matematik misol va masalalarni yechish;\n4. Kod yozib, uni tahrirlash va texnologiya, dasturlash tillari, algoritmlar haqida ma'lumot berish;\n5. She'rlar, hikoyalar, insholar va ijodiy asarlar yozib berish;\n6. Sog'liq-salomatlik, to'g'ri ovqatlanish va fitnes bo'yicha to'g'ri ma'lumot berish.\n\n<b>Bot savollarga qanchalik tez javob beradi?</b>\nBir nech soniyadan bir necha daqiqagacha.\n\n<b>Buyruqlar:</b>\n/start - botni qayta ishga tushirish;\n/information - foydalanish qo'llanmasi", parse_mode="HTML")
 
+async def set_default_commands():
+    await bot.set_my_commands([
+        types.BotCommand(command="start", description="Qayta ishga tushurish"),
+        types.BotCommand(command="information", description="Foydalanish qo'llanmasi"),
+    ])
 
 async def main():
+    await set_default_commands()
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
