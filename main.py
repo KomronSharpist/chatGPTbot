@@ -11,7 +11,8 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram import Bot, types
 
 logging.basicConfig(level=logging.INFO)
-bot = Bot(token="6440053728:AAFYsc0PcAicgsEOyYQysWi81ig7yYVG2WQ")
+bot = Bot(token="6532573752:AAFKYZ6mciKUOm4Cu7aEGhJDzWITMqOh6zc")
+# bot = Bot(token="6440053728:AAFYsc0PcAicgsEOyYQysWi81ig7yYVG2WQ")
 dp = Dispatcher()
 api_keys = {"Komronapi": "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"}
 api_names_iterator = iter(api_keys.keys())
@@ -327,7 +328,7 @@ async def handle_message(message: types.Message):
                 )
             elif isinstance(reklam, types.Message):
                 await bot.copy_message(
-                    chat_id=user[0],
+                    chat_id=user_id,
                     from_chat_id=reklam.chat.id,
                     message_id=reklam.message_id,
                     reply_markup=reklamBuilder.as_markup()
