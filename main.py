@@ -318,22 +318,20 @@ async def handle_message(message: types.Message):
                 video = reklam.video
                 caption = reklam.caption
 
-                for user_id in active_users:
-                    await bot.send_video(
-                        chat_id=user_id,
-                        video=video.file_id,
-                        caption=caption,
-                        disable_notification=True,
-                        reply_markup=reklamBuilder.as_markup()
-                    )
+                await bot.send_video(
+                    chat_id=user_id,
+                    video=video.file_id,
+                    caption=caption,
+                    disable_notification=True,
+                    reply_markup=reklamBuilder.as_markup()
+                )
             elif isinstance(reklam, types.Message):
-                for user in list(active_users.items()):
-                    await bot.copy_message(
-                        chat_id=user[0],
-                        from_chat_id=reklam.chat.id,
-                        message_id=reklam.message_id,
-                        reply_markup=reklamBuilder.as_markup()
-                    )
+                await bot.copy_message(
+                    chat_id=user[0],
+                    from_chat_id=reklam.chat.id,
+                    message_id=reklam.message_id,
+                    reply_markup=reklamBuilder.as_markup()
+                )
             kb = [
                 [
                     types.KeyboardButton(text="Yuborish ✅"),
