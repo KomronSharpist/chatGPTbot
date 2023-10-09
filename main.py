@@ -92,7 +92,7 @@ async def periodic_user_check():
             await check_user_reachability(user_id)
         today_active_users.clear()
         today_logined_users.clear()
-        await asyncio.sleep(180)
+        await asyncio.sleep(24 * 60 * 60)
 def get_duplicates():
     seen = set()
     duplicates = set()
