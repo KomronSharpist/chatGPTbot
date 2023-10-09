@@ -378,16 +378,17 @@ async def chat_with_openai(message: types.Message):
         if 'awaiting_response' in user_states[user_id] and user_states[user_id]['awaiting_response']:
             await message.reply("⏳ Oldingi savolingiz uchun javobni tayyorlayapman iltimos kutib turing.")
             return
-
-        user_states[user_id]['awaiting_response'] = True
-
-        response = await process_user_request(user_id, user_message)
-
-        user_states[user_id]['awaiting_response'] = False
-
-        await message.reply(response)
     except:
         await message.reply("Iltimos botdan foydalanish uchun qayta /start bosib yuboring.")
+
+    user_states[user_id]['awaiting_response'] = True
+
+    response = await process_user_request(user_id, user_message)
+
+    user_states[user_id]['awaiting_response'] = False
+
+    await message.reply(response)
+
 
 async def process_user_request(user_id, user_message):
     try:
