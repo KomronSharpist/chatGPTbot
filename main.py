@@ -11,10 +11,10 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram import Bot, types
 
 logging.basicConfig(level=logging.INFO)
-# bot = Bot(token="5701012090:AAGRTr0XVls7yrfcyX1XaP1btLV4D9mWYjY")
-bot = Bot(token="6440053728:AAFYsc0PcAicgsEOyYQysWi81ig7yYVG2WQ")
+bot = Bot(token="5701012090:AAGRTr0XVls7yrfcyX1XaP1btLV4D9mWYjY")
+# bot = Bot(token="6440053728:AAFYsc0PcAicgsEOyYQysWi81ig7yYVG2WQ")
 dp = Dispatcher()
-api_keys = {"Komronapi": "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"}
+api_keys = {"Komronapi": "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"}
 api_names_iterator = iter(api_keys.keys())
 api_add_session = {}
 api_control_session = {}
@@ -229,7 +229,7 @@ async def handle_message(message: types.Message):
     user_message = message.text
 
     if await check_subcription(message):
-        if user_message == "Orqaga qaytish  🔙":
+        if user_message == "Orqaga qaytish  🔙" or user_message == "Bekor qilish ❌" :
             reklam = ""
             reklamBuilder = InlineKeyboardBuilder()
             if user_id in send_message_session:
@@ -312,16 +312,6 @@ async def handle_message(message: types.Message):
                 await message.answer(
                     "Xabaringiz yuborildi ✅",
                     reply_markup=keyboard)
-            elif user_message == "Bekor qilish ❌":
-                kb = [
-                    [
-                        types.KeyboardButton(text="Orqaga qaytish  🔙"),
-                    ]
-                ]
-                keyboard = types.ReplyKeyboardMarkup(keyboard=kb, resize_keyboard=True)
-                await message.answer(
-                    "Xabaringiz ochirildi 😕",
-                    reply_markup=keyboard)
             elif user_id in add_inline_keyboard_session:
                 keyboards = user_message.split("\n")
                 for keyboard in keyboards:
@@ -376,7 +366,9 @@ async def chat_with_openai(message: types.Message):
 
     try:
         if 'awaiting_response' in user_states[user_id] and user_states[user_id]['awaiting_response']:
-            await message.reply("⏳ Oldingi savolingiz uchun javobni tayyorlayapman iltimos kutib turing.")
+            builder = InlineKeyboardBuilder()
+            builder.add(types.InlineKeyboardButton(text=f"❌", callback_data=f"bekorqilish"))
+            await message.reply("⏳ Oldingi so'rovingiz bo'yicha javob tayyorlanmoqda, iltimos biroz kutib turing!", reply_markup=builder.as_markup())
             return
     except:
         await message.reply("Iltimos botdan foydalanish uchun qayta /start bosib yuboring.")
@@ -586,7 +578,6 @@ async def send_message_controller(userId):
             )
     del send_message_session[userId]
 
-
 @dp.callback_query(lambda callback: callback.data.startswith("admin_delete_"))
 async def admin_controller(callback: types.CallbackQuery):
     if callback.data.startswith("admin_delete_"):
@@ -623,6 +614,10 @@ async def api_controller(callback: types.CallbackQuery):
             await callback.answer(f"Deleting api: {api_name}", show_alert=True)
         else:
             await callback.answer("Api not found.", show_alert=True)
+
+@dp.callback_query(lambda callback: callback.data == 'bekorqilish')
+async def cancel_callback(callback: types.CallbackQuery):
+    await callback.message.delete()
 
 @dp.callback_query(lambda callback: callback.data.startswith("channel_delete_"))
 async def channel_controller(callback: types.CallbackQuery):
