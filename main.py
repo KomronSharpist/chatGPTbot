@@ -11,8 +11,8 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram import Bot, types
 
 logging.basicConfig(level=logging.INFO)
-# bot = Bot(token="5701012090:AAGRTr0XVls7yrfcyX1XaP1btLV4D9mWYjY")
-bot = Bot(token="6440053728:AAFYsc0PcAicgsEOyYQysWi81ig7yYVG2WQ")
+bot = Bot(token="5701012090:AAGRTr0XVls7yrfcyX1XaP1btLV4D9mWYjY")
+# bot = Bot(token="6440053728:AAFYsc0PcAicgsEOyYQysWi81ig7yYVG2WQ")
 dp = Dispatcher()
 api_keys = {"Komronapi": "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"}
 api_names_iterator = iter(api_keys.keys())
@@ -88,7 +88,7 @@ async def check_user_reachability(user_id):
         inactive_users[user_id[0]] = True
 async def periodic_user_check():
     while True:
-        for user_id in list(all_users.items()):
+        for user_id in list(active_users.items()):
             await check_user_reachability(user_id)
         today_active_users.clear()
         today_logined_users.clear()
@@ -154,7 +154,7 @@ async def cmd_start(message: types.Message):
 
 
 @dp.message(Command("admin"))
-async def cmd_start(message: types.Message):
+async def cmd_start_admin(message: types.Message):
     user_id = message.from_user.id
     user = message.from_user
     if user_id in admin_userIds.keys():
@@ -171,6 +171,7 @@ async def cmd_start(message: types.Message):
                     types.KeyboardButton(text="Kanal qo'shish ➕")
                 ],
                 [types.KeyboardButton(text="Admin boshqaruvi 👤")],
+                [types.KeyboardButton(text="Ertangi kunga otish 🔄")],
                 [types.KeyboardButton(text="Orqaga qaytish 🔙")],
             ]
             keyboard = types.ReplyKeyboardMarkup(keyboard=kb, resize_keyboard=True)
@@ -262,6 +263,7 @@ async def handle_message(message: types.Message):
                         types.KeyboardButton(text="Kanal qo'shish ➕")
                     ],
                     [types.KeyboardButton(text="Admin boshqaruvi 👤")],
+                    [types.KeyboardButton(text="Ertangi kunga otish 🔄")],
                     [types.KeyboardButton(text="Orqaga qaytish 🔙")],
                 ]
                 keyboard = types.ReplyKeyboardMarkup(keyboard=kb, resize_keyboard=True)
@@ -353,11 +355,16 @@ async def handle_message(message: types.Message):
             await api_control_session_service(message)
         elif user_id in chanel_control_session:
             await chanel_control_session_service(message)
+        elif user_message == "Ertangi kunga o'tish ✅":
+            for user_id in list(active_users.items()):
+                await check_user_reachability(user_id)
+            today_active_users.clear()
+            today_logined_users.clear()
+            await cmd_start_admin(message)
         elif user_id in admin_sessions:
             await admin_sessions_service(message)
         else:
             await chat_with_openai(message)
-
 
 
 async def chat_with_openai(message: types.Message):
@@ -449,6 +456,15 @@ async def admin_sessions_service(message: types.Message):
         keyboard = types.ReplyKeyboardMarkup(keyboard=kb, resize_keyboard=True)
         await message.answer(
             "APIni yangilash 🔄",
+            reply_markup=keyboard)
+    if user_message == "Ertangi kunga otish 🔄" and user_id in ownerId:
+        kb = [
+            [types.KeyboardButton(text="Ertangi kunga o'tish ✅")],
+            [types.KeyboardButton(text="Orqaga qaytish  🔙")]
+        ]
+        keyboard = types.ReplyKeyboardMarkup(keyboard=kb, resize_keyboard=True)
+        await message.answer(
+            "Rostdan ham keyingi kunga o'tmoqchimisiz?",
             reply_markup=keyboard)
     if user_message == "Xabar yuborish ✉️":
         send_message_session[user_id] = True
