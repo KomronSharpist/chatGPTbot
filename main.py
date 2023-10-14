@@ -1,4 +1,5 @@
 import asyncio
+import json
 import logging
 import os
 from collections import defaultdict
@@ -24,21 +25,14 @@ admin_control_session = {}
 admin_add_session = {}
 chat_sessions = {}
 admin_sessions = {}
-user_states = {}
 owner_sessions = {}
+user_reload_messages = {}
 send_message_session = {}
 inline_keyboard_session = {}
 add_inline_keyboard_session = {}
 logging.basicConfig(level=logging.INFO)
-all_users = {}
-active_users = {}
-today_active_users = []
-today_logined_users = []
-user_reload_messages = {}
-inactive_users = {}
-today = datetime.now().date()
-channel_usernames = []
 admin_userIds = {1052097431: "𝙺𝚘𝚖𝚛𝚘𝚗", 1232328054: "Cloud"}
+today = datetime.now().date()
 ownerId = [1232328054, 1052097431]
 user_request_counts = defaultdict(int)
 user_last_request = {}
@@ -46,6 +40,41 @@ reklam = ""
 reklamBuilder = InlineKeyboardBuilder()
 video_file_id = 0
 chat_id = 0
+user_states = {}
+channel_usernames = []
+
+try:
+    with open('all_users.json', 'r') as file:
+        all_users = json.load(file)
+except FileNotFoundError:
+    all_users = []
+
+try:
+    with open('inactive_users.json', 'r') as file:
+        inactive_users = json.load(file)
+except FileNotFoundError:
+    inactive_users = []
+
+try:
+    with open('active_users.json', 'r') as file:
+        active_users = json.load(file)
+except FileNotFoundError:
+    active_users = []
+
+
+try:
+    with open('today_active_users.json', 'r') as file:
+        today_active_users = json.load(file)
+except FileNotFoundError:
+    today_active_users = []
+
+
+try:
+    with open('today_logined_users.json', 'r') as file:
+        today_logined_users = json.load(file)
+except FileNotFoundError:
+    today_logined_users = []
+
 
 
 async def is_daily_limit_exceeded(user_id):
@@ -81,17 +110,25 @@ async def is_subscribed(user_id, channel_username):
         return False
 async def check_user_reachability(user_id):
     try:
-        send_message_session = await bot.send_message(chat_id=user_id[0],text="Botni block qilmaganingiz tekshirilmoqda, bu habarga etibor bermang. Tushunganingiz uchun raxmat 😇")
-        await bot.delete_message(user_id[0], send_message_session.message_id)
+        send_message_session = await bot.send_message(chat_id=user_id,text="Botni block qilmaganingiz tekshirilmoqda, bu habarga etibor bermang. Tushunganingiz uchun raxmat 😇")
+        await bot.delete_message(user_id, send_message_session.message_id)
     except Exception as e:
-        del active_users[user_id[0]]
-        inactive_users[user_id[0]] = True
+        active_users.remove(user_id)
+        inactive_users.append(user_id)
+        with open('inactive_users.json', 'w') as file:
+            json.dump(inactive_users, file)
+        with open('active_users.json', 'w') as file:
+            json.dump(active_users, file)
 async def periodic_user_check():
     while True:
-        for user_id in list(active_users.items()):
+        for user_id in active_users:
             await check_user_reachability(user_id)
         today_active_users.clear()
         today_logined_users.clear()
+        with open('today_logined_users.json', 'w') as file:
+            json.dump(today_logined_users, file)
+        with open('today_active_users.json', 'w') as file:
+            json.dump(today_active_users, file)
         await asyncio.sleep(24 * 60 * 60)
 def get_duplicates():
     seen = set()
@@ -106,7 +143,8 @@ def get_duplicates():
 @dp.message(Command("start"))
 async def cmd_start(message: types.Message):
     user_id = message.from_user.id
-    user_states[user_id] = {'awaiting_response': False}
+    if user_id not in user_states.keys():
+        user_states[user_id] = {'awaiting_response': False}
     channel_unsubscribed = []
     if user_id in api_control_session:
         del api_control_session[user_id]
@@ -152,7 +190,6 @@ async def cmd_start(message: types.Message):
     keyboard = types.ReplyKeyboardRemove()
     await message.answer(f"Sizning ID raqamingiz: {message.from_user.id}", reply_markup=keyboard)
 
-
 @dp.message(Command("admin"))
 async def cmd_start_admin(message: types.Message):
     user_id = message.from_user.id
@@ -188,7 +225,6 @@ async def cmd_start_admin(message: types.Message):
             keyboard = types.ReplyKeyboardMarkup(keyboard=kb, resize_keyboard=True)
             await message.answer(f"Admin panelga xush kelibsiz. Menuni tanlang!", reply_markup=keyboard)
 
-
 async def check_subcription(message: types.Message):
     user_id = message.from_user.id
     user = message.from_user
@@ -213,15 +249,24 @@ async def check_subcription(message: types.Message):
     elif len(channel_unsubscribed) == 0:
         if user_id not in today_logined_users and user_id not in all_users:
             today_logined_users.append(user_id)
+            with open('today_logined_users.json', 'w') as file:
+                json.dump(today_logined_users, file)
         today_active_users.append(user_id)
+        with open('today_active_users.json', 'w') as file:
+            json.dump(today_active_users, file)
         if user_id not in all_users:
-            all_users[user_id] = user.first_name
+            all_users.append(user_id)
+            with open('all_users.json', 'w') as file:
+                json.dump(all_users, file)
         if user_id not in active_users:
-            active_users[user_id] = user.first_name
-        if user_id in all_users.keys():
-            if user_id in inactive_users.keys():
-                active_users[user_id] = user.first_name
-                del inactive_users[user_id]
+            active_users.append(user_id)
+            with open('active_users.json', 'w') as file:
+                json.dump(active_users, file)
+        if user_id in all_users:
+            if user_id in inactive_users:
+                inactive_users.remove(user_id)
+                with open('inactive_users.json', 'w') as file:
+                    json.dump(inactive_users, file)
         return True
 @dp.message()
 async def handle_message(message: types.Message):
@@ -356,16 +401,19 @@ async def handle_message(message: types.Message):
         elif user_id in chanel_control_session:
             await chanel_control_session_service(message)
         elif user_message == "Ertangi kunga o'tish ✅":
-            for user_id in list(active_users.items()):
+            for user_id in active_users:
                 await check_user_reachability(user_id)
-            today_active_users.clear()
             today_logined_users.clear()
+            today_active_users.clear()
+            with open('today_logined_users.json', 'w') as file:
+                json.dump(today_logined_users, file)
+            with open('today_active_users.json', 'w') as file:
+                json.dump(today_active_users, file)
             await cmd_start_admin(message)
         elif user_id in admin_sessions:
             await admin_sessions_service(message)
         else:
             await chat_with_openai(message)
-
 
 async def chat_with_openai(message: types.Message):
     user_id = message.from_user.id
@@ -380,6 +428,7 @@ async def chat_with_openai(message: types.Message):
     except:
         await message.reply("Iltimos botdan foydalanish uchun qayta /start bosib yuboring.")
 
+
     user_states[user_id]['awaiting_response'] = True
 
     response = await process_user_request(user_id, user_message)
@@ -387,7 +436,6 @@ async def chat_with_openai(message: types.Message):
     user_states[user_id]['awaiting_response'] = False
 
     await message.reply(response)
-
 
 async def process_user_request(user_id, user_message):
     try:
@@ -525,7 +573,6 @@ async def send_message_service(message: types.Message):
     await message.answer("Xabaringiz saqlandi. Xabar tagiga keyboard reklama qo'shasizmi?", reply_markup=keyboard)
     inline_keyboard_session[message.from_user.id] = True
 
-
 async def api_control_session_service(message: types.Message):
     user_id = message.from_user.id
     user_message = message.text
@@ -585,7 +632,7 @@ async def send_message_controller(userId):
                 reply_markup=reklamBuilder.as_markup()
             )
     elif isinstance(reklam, types.Message):
-        for user in list(active_users.items()):
+        for user in active_users:
             await bot.copy_message(
                 chat_id=user[0],
                 from_chat_id=reklam.chat.id,
@@ -618,7 +665,7 @@ async def api_controller(callback: types.CallbackQuery):
     if callback.data.startswith("api_delete_"):
         api_name = callback.data.split("_")[2]
 
-        if api_name in api_keys.keys():
+        if api_name in api_keys:
             del api_keys[api_name]
             builder = InlineKeyboardBuilder()
             for item in list(api_keys.items()):
@@ -669,17 +716,25 @@ async def channel_controller(callback: types.CallbackQuery):
             await callback.answer("• Botdan foydalanish uchun avval kanalga obuna bo’ling.")
             return
         else:
-            user = callback.from_user
-            if user.id not in today_logined_users and user.id not in all_users:
-                today_logined_users.append(user.id)
-            today_active_users.append(user.id)
-            if user.id not in all_users:
-                all_users[user.id] = user.first_name
-            if user.id not in active_users:
-                active_users[user.id] = user.first_name
-            if user.id in all_users and user.id in inactive_users:
-                active_users[user.id] = user.first_name
-                del inactive_users[user.id]
+            if user_id not in today_logined_users and user_id not in all_users:
+                today_logined_users.append(user_id)
+                with open('today_logined_users.json', 'w') as file:
+                    json.dump(today_logined_users, file)
+            today_active_users.append(user_id)
+            with open('today_active_users.json', 'w') as file:
+                json.dump(today_active_users, file)
+            if user_id not in all_users:
+                all_users.append(user_id)
+                with open('all_users.json', 'w') as file:
+                    json.dump(all_users, file)
+            if user_id not in active_users:
+                active_users.append(user_id)
+                with open('active_users.json', 'w') as file:
+                    json.dump(active_users, file)
+            if user_id in all_users and user_id in inactive_users:
+                inactive_users.remove(user_id)
+                with open('inactive_users.json', 'w') as file:
+                    json.dump(inactive_users, file)
             await bot.delete_message(chat_id=callback.message.chat.id, message_id=callback.message.message_id)
             await callback.answer("")
             await callback.message.answer(
