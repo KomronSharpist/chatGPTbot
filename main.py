@@ -143,7 +143,10 @@ def get_duplicates():
 @dp.message(Command("start"))
 async def cmd_start(message: types.Message):
     user_id = message.from_user.id
-    user_states[user_id] = {'awaiting_response': False}
+    if user_id in user_states.keys():
+        user_states[user_id]['awaiting_response'] = False
+    else:
+        user_states[user_id] = {'awaiting_response': False}
     channel_unsubscribed = []
     if user_id in api_control_session:
         del api_control_session[user_id]
