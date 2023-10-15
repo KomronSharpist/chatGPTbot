@@ -143,8 +143,7 @@ def get_duplicates():
 @dp.message(Command("start"))
 async def cmd_start(message: types.Message):
     user_id = message.from_user.id
-    if user_id not in user_states.keys():
-        user_states[user_id] = {'awaiting_response': False}
+    user_states[user_id] = {'awaiting_response': False}
     channel_unsubscribed = []
     if user_id in api_control_session:
         del api_control_session[user_id]
@@ -460,7 +459,7 @@ async def process_user_request(user_id, user_message):
                 await bot.delete_message(user_id, user_reload_messages[user_id].message_id)
                 await increment_request_count(user_id)
                 return bot_response
-    except openai.error.OpenAIError as e:
+    except Exception as e:
         await bot.delete_message(user_id, user_reload_messages[user_id].message_id)
         await bot.send_message(chat_id="@testchanellforbot13",
                                text=f"Botda nosozlik bor iltimos bartaraf eting:\n\n {e}\n\n\n {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
