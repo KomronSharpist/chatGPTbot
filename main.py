@@ -80,7 +80,7 @@ except FileNotFoundError:
 async def is_daily_limit_exceeded(user_id):
     today = date.today()
     if user_id in user_last_request and user_last_request[user_id] == today:
-        if user_request_counts[user_id] >= 40:
+        if user_request_counts[user_id] >= 30:
             return True
     else:
         user_request_counts[user_id] = 0
@@ -403,8 +403,8 @@ async def handle_message(message: types.Message):
         elif user_id in chanel_control_session:
             await chanel_control_session_service(message)
         elif user_message == "Ertangi kunga o'tish ✅":
-            for user_id in active_users:
-                await check_user_reachability(user_id)
+            # for user_id in active_users:
+            #     await check_user_reachability(user_id)
             today_logined_users.clear()
             today_active_users.clear()
             with open('today_logined_users.json', 'w') as file:
@@ -625,22 +625,40 @@ async def send_message_controller(userId):
         video = reklam.video
         caption = reklam.caption
 
-        for user_id in active_users:
-            await bot.send_video(
-                chat_id=user_id,
-                video=video.file_id,
-                caption=caption,
-                disable_notification=True,
-                reply_markup=reklamBuilder.as_markup()
-            )
+        for user_id in all_users:
+            try:
+                await bot.send_video(
+                    chat_id=user_id,
+                    video=video.file_id,
+                    caption=caption,
+                    disable_notification=True,
+                    reply_markup=reklamBuilder.as_markup()
+                )
+            except Exception as e:
+                active_users.remove(user_id)
+                inactive_users.append(user_id)
+                with open('inactive_users.json', 'w') as file:
+                    json.dump(inactive_users, file)
+                with open('active_users.json', 'w') as file:
+                    json.dump(active_users, file)
+
     elif isinstance(reklam, types.Message):
-        for user in active_users:
-            await bot.copy_message(
-                chat_id=user[0],
-                from_chat_id=reklam.chat.id,
-                message_id=reklam.message_id,
-                reply_markup=reklamBuilder.as_markup()
-            )
+        for user in all_users:
+            try:
+                await bot.copy_message(
+                    chat_id=user,
+                    from_chat_id=reklam.chat.id,
+                    message_id=reklam.message_id,
+                    reply_markup=reklamBuilder.as_markup()
+                )
+            except Exception as e:
+                active_users.remove(user)
+                inactive_users.append(user)
+                with open('inactive_users.json', 'w') as file:
+                    json.dump(inactive_users, file)
+                with open('active_users.json', 'w') as file:
+                    json.dump(active_users, file)
+
     del send_message_session[userId]
 
 @dp.callback_query(lambda callback: callback.data.startswith("admin_delete_"))
@@ -755,7 +773,7 @@ async def main():
 if __name__ == "__main__":
     loop = asyncio.get_event_loop()
     loop.create_task(main())
-    loop.create_task(periodic_user_check())
+    # loop.create_task(periodic_user_check())
 
     try:
         loop.run_forever()
