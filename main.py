@@ -121,8 +121,6 @@ async def check_user_reachability(user_id):
             json.dump(active_users, file)
 async def periodic_user_check():
     while True:
-        for user_id in active_users:
-            await check_user_reachability(user_id)
         today_active_users.clear()
         today_logined_users.clear()
         with open('today_logined_users.json', 'w') as file:
@@ -773,7 +771,7 @@ async def main():
 if __name__ == "__main__":
     loop = asyncio.get_event_loop()
     loop.create_task(main())
-    # loop.create_task(periodic_user_check())
+    loop.create_task(periodic_user_check())
 
     try:
         loop.run_forever()
