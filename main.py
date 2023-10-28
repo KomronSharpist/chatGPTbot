@@ -12,8 +12,8 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram import Bot, types
 
 logging.basicConfig(level=logging.INFO)
-# bot = Bot(token="5701012090:AAGRTr0XVls7yrfcyX1XaP1btLV4D9mWYjY")
-bot = Bot(token="6440053728:AAFYsc0PcAicgsEOyYQysWi81ig7yYVG2WQ")
+bot = Bot(token="5701012090:AAGRTr0XVls7yrfcyX1XaP1btLV4D9mWYjY")
+# bot = Bot(token="6440053728:AAFYsc0PcAicgsEOyYQysWi81ig7yYVG2WQ")
 dp = Dispatcher()
 api_keys = {"Komronapi": "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"}
 api_names_iterator = iter(api_keys.keys())
@@ -42,6 +42,7 @@ video_file_id = 0
 chat_id = 0
 user_states = {}
 channel_usernames = []
+sended_users = []
 
 try:
     with open('all_users.json', 'r') as file:
@@ -273,6 +274,8 @@ async def handle_message(message: types.Message):
     global new_api_key, last_api_key_update, video_file_id, reklam, reklamBuilder
     user_id = message.from_user.id
     user_message = message.text
+    if user_id not in user_states.keys():
+        user_states[user_id] = {'awaiting_response': False}
 
     if await check_subcription(message):
         if user_message == "Orqaga qaytish  🔙" or user_message == "Bekor qilish ❌" :
@@ -349,7 +352,11 @@ async def handle_message(message: types.Message):
                     "Xabaringiz to'g'rimi? Agarda to'g'ri bo'lsa \"Yuborish ✅\" tugmasini bosing aks holda \"Bekor qilish ❌\"ni bosing",
                     reply_markup=keyboard)
             elif user_message == "Yuborish ✅":
+                start_time = datetime.now()
                 await send_message_controller(user_id)
+                end_time = datetime.now()
+
+                execution_time = (end_time - start_time).total_seconds()
                 kb = [
                     [
                         types.KeyboardButton(text="Orqaga qaytish  🔙"),
@@ -357,7 +364,7 @@ async def handle_message(message: types.Message):
                 ]
                 keyboard = types.ReplyKeyboardMarkup(keyboard=kb, resize_keyboard=True)
                 await message.answer(
-                    "Xabaringiz yuborildi ✅",
+                    f"Xabaringiz yuborildi ✅\n\nYuborilganlar soni: {len(sended_users)}\nXabaringiz yuborilishi uchun ishlatilgan voqt: {execution_time}",
                     reply_markup=keyboard)
             elif user_id in add_inline_keyboard_session:
                 keyboards = user_message.split("\n")
@@ -625,6 +632,7 @@ async def send_message_controller(userId):
 
         for user_id in all_users:
             try:
+                sended_users.append(user_id)
                 await bot.send_video(
                     chat_id=user_id,
                     video=video.file_id,
@@ -643,6 +651,7 @@ async def send_message_controller(userId):
     elif isinstance(reklam, types.Message):
         for user in all_users:
             try:
+                sended_users.append(user)
                 await bot.copy_message(
                     chat_id=user,
                     from_chat_id=reklam.chat.id,
