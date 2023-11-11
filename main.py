@@ -3,7 +3,7 @@ import json
 import logging
 import os
 from collections import defaultdict
-from datetime import datetime, date, timedelta, time
+from datetime import datetime, date, timedelta, time, timezone
 import openai
 from aiogram import Bot, Dispatcher, types, F
 from aiogram.enums import ChatMemberStatus
@@ -15,7 +15,7 @@ logging.basicConfig(level=logging.INFO)
 # bot = Bot(token="5701012090:AAGRTr0XVls7yrfcyX1XaP1btLV4D9mWYjY")
 bot = Bot(token="6440053728:AAFYsc0PcAicgsEOyYQysWi81ig7yYVG2WQ")
 dp = Dispatcher()
-api_keys = {"Komronapi": "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"}
+api_keys = {"Komronapi": "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"}
 api_names_iterator = iter(api_keys.keys())
 api_add_session = {}
 api_control_session = {}
@@ -43,6 +43,7 @@ chat_id = 0
 user_states = {}
 channel_usernames = []
 sended_users = []
+unsended_users = []
 
 try:
     with open('all_users.json', 'r') as file:
@@ -122,8 +123,10 @@ async def check_user_reachability(user_id):
             json.dump(active_users, file)
 async def periodic_user_check():
     while True:
-        now = datetime.now()
-        next_midnight = datetime.combine(now.date() + timedelta(days=1), time(0, 0))
+        now_utc = datetime.now(timezone.utc)
+        utc_plus_5 = timedelta(hours=5)
+        now = now_utc + utc_plus_5
+        next_midnight = datetime.combine(now.date() + timedelta(days=1), time(0, 0), timezone.utc)
         time_until_midnight = (next_midnight - now).total_seconds()
 
         await asyncio.sleep(time_until_midnight)
@@ -189,7 +192,7 @@ async def cmd_start(message: types.Message):
 @dp.message(Command("information"))
 async def cmd_start(message: types.Message):
     keyboard = types.ReplyKeyboardRemove()
-    await message.answer("🤖<b>Bot ChatGPT sun'iy intellektni qo'llab-quvvatlaydi. Foydalanish uchun esa shunchaki savolingizni botga yozing! \n\nFoydalanish qo'llanmasi:</b> \n• Bot sizning istalgan savolingizga suhbatdoshdek javob beradi va barcha tillarda so'zlashishingiz mumkin; \n• Bot faqat 2021-yilgi ma'lumotlarga ega;\n• Notog'ri javob qaytarsa, savolingizni qaytadan batafsilroq yozing.\n\n<b>Buyruqlar: </b>\n/start - botni qayta ishga tushirish;\n/information - foydalanish qo'llanmasi\n\n<b>Murojaat va takliflar uchun:</b>\n @TexnoGPT_support", reply_markup=keyboard, parse_mode="HTML")
+    await message.answer("🤖<b>Bot ChatGPT sun'iy intellektni qo'llab-quvvatlaydi. Foydalanish uchun esa shunchaki savolingizni botga yozing! \n\nFoydalanish qo'llanmasi:</b> \n• Bot sizning istalgan savolingizga suhbatdoshdek javob beradi va barcha tillarda so'zlashishingiz mumkin; \n• Bot faqat 2021-yilgi ma'lumotlarga ega;\n• Notog'ri javob qaytarsa, savolingizni qaytadan batafsilroq yozing.\n\n<b>Buyruqlar: </b>\n/start - botni qayta ishga tushirish;\n/information - foydalanish qo'llanmasi\n\n<b>Murojaat va takliflar uchun:</b>\n @Texno_GPTsupport", reply_markup=keyboard, parse_mode="HTML")
 
 @dp.message(Command("myid"))
 async def cmd_start(message: types.Message):
@@ -357,8 +360,6 @@ async def handle_message(message: types.Message):
                     "Xabaringiz to'g'rimi? Agarda to'g'ri bo'lsa \"Yuborish ✅\" tugmasini bosing aks holda \"Bekor qilish ❌\"ni bosing",
                     reply_markup=keyboard)
             elif user_message == "Yuborish ✅":
-                await send_message_controller(message)
-
                 if user_id in ownerId:
                     owner_sessions[user_id] = True
                     kb = [
@@ -387,6 +388,7 @@ async def handle_message(message: types.Message):
                     ]
                     keyboard = types.ReplyKeyboardMarkup(keyboard=kb, resize_keyboard=True)
                     await message.answer(f"Admin panelga xush kelibsiz. Menuni tanlang!", reply_markup=keyboard)
+                await send_message_controller(message)
             elif user_id in add_inline_keyboard_session:
                 keyboards = user_message.split("\n")
                 for keyboard in keyboards:
@@ -445,39 +447,68 @@ async def handle_message(message: types.Message):
         else:
             await chat_with_openai(message)
 
+# async def chat_with_openai(message: types.Message):
+#     user_id = message.from_user.id
+#     user_message = message.text
+#
+#     if 'awaiting_response' in user_states[user_id] and user_states[user_id]['awaiting_response']:
+#         builder = InlineKeyboardBuilder()
+#         builder.add(types.InlineKeyboardButton(text=f"❌", callback_data=f"bekorqilish"))
+#         await message.reply("⏳ Oldingi so'rovingiz bo'yicha javob tayyorlanmoqda, iltimos biroz kutib turing!", reply_markup=builder.as_markup())
+#         return
+#
+#     user_states[user_id]['awaiting_response'] = True
+#
+#     response = await process_user_request(user_id, user_message)
+#
+#     user_states[user_id]['awaiting_response'] = False
+#
+#     await message.reply(response)
+
 async def chat_with_openai(message: types.Message):
     user_id = message.from_user.id
     user_message = message.text
 
-    try:
-        if 'awaiting_response' in user_states[user_id] and user_states[user_id]['awaiting_response']:
-            builder = InlineKeyboardBuilder()
-            builder.add(types.InlineKeyboardButton(text=f"❌", callback_data=f"bekorqilish"))
-            await message.reply("⏳ Oldingi so'rovingiz bo'yicha javob tayyorlanmoqda, iltimos biroz kutib turing!", reply_markup=builder.as_markup())
-            return
-    except:
-        await message.reply("Iltimos botdan foydalanish uchun qayta /start bosib yuboring.")
-
+    if 'awaiting_response' in user_states[user_id] and user_states[user_id]['awaiting_response']:
+        builder = InlineKeyboardBuilder()
+        builder.add(types.InlineKeyboardButton(text=f"❌", callback_data=f"bekorqilish"))
+        await message.reply("⏳ Oldingi so'rovingiz bo'yicha javob tayyorlanmoqda, iltimos biroz kutib turing!", reply_markup=builder.as_markup())
+        return
 
     user_states[user_id]['awaiting_response'] = True
 
-    response = await process_user_request(user_id, user_message)
+    # Set a timeout task to reset the awaiting_response after 5 minutes
+    timeout_seconds = 5 * 60
+    timeout_task = asyncio.create_task(timeout_reset(user_id, timeout_seconds))
 
+    try:
+        response = await process_user_request(user_id, user_message)
+        await message.reply(response)
+    finally:
+        # Cancel the timeout task if it hasn't completed
+        timeout_task.cancel()
+
+        # Reset the awaiting_response
+        user_states[user_id]['awaiting_response'] = False
+
+async def timeout_reset(user_id, timeout_seconds):
+    await asyncio.sleep(timeout_seconds)
     user_states[user_id]['awaiting_response'] = False
 
-    await message.reply(response)
+async def is_text_message(message):
+    return isinstance(message, str) and len(message.strip()) > 0
 
 async def process_user_request(user_id, user_message):
     try:
         if await is_daily_limit_exceeded(user_id):
             await bot.send_message(user_id,
-                                   f"😔 <b>Afsuski kunlik 40 ta so'rov limitiga yetdingiz! Limit har kuni yangilanadi.</b>",
+                                   f"😔 <b>Afsuski kunlik 30 ta so'rov limitiga yetdingiz! Limit har kuni yangilanadi.</b>",
                                    parse_mode="HTML")
         else:
             user_reload_messages[user_id] = await bot.send_message(user_id, "⏳ Javobni tayyorlayapman…")
             openai.api_key = await get_current_api_key()
             response = await asyncio.to_thread(openai.ChatCompletion.create,
-                                               model="gpt-3.5-turbo",
+                                               model="gpt-3.5-turbo-1106",
                                                messages=[
                                                    {"role": "system", "content": "You are a helpful assistant."},
                                                    {"role": "user", "content": user_message}
@@ -666,6 +697,7 @@ async def send_message_controller(message: types.Message):
                     parse_mode="HTML"
                 )
             except Exception as e:
+                unsended_users.append(user_id)
                 active_users.remove(user_id)
                 inactive_users.append(user_id)
                 with open('inactive_users.json', 'w') as file:
@@ -685,6 +717,7 @@ async def send_message_controller(message: types.Message):
                     parse_mode="HTML"
                 )
             except Exception as e:
+                unsended_users.append(user)
                 active_users.remove(user)
                 inactive_users.append(user)
                 with open('inactive_users.json', 'w') as file:
@@ -693,15 +726,11 @@ async def send_message_controller(message: types.Message):
                     json.dump(active_users, file)
 
     end_time = datetime.now()
-    execution_time = (end_time - start_time).total_seconds()
-    kb = [
-        [
-            types.KeyboardButton(text="Orqaga qaytish  🔙"),
-        ]
-    ]
-    keyboard = types.ReplyKeyboardMarkup(keyboard=kb, resize_keyboard=True)
-    await message.answer(f"Xabaringiz yuborildi ✅\n\nYuborilganlar soni: {len(sended_users)}\nXabaringiz yuborilishi uchun ishlatilgan voqt: {execution_time}",
-        reply_markup=keyboard)
+    execution_time = (end_time - start_time)
+    total_seconds = execution_time.total_seconds()
+    minutes, seconds = divmod(total_seconds, 60)
+    time_string = f"{int(minutes)} daqiqa {int(seconds)} sekund vaqt oralig'ida yuborildi."
+    await message.answer(f"Xabaringiz yuborildi ✅\n\nYuborilmaganlar soni: {len(unsended_users)}\nYuborilganlar soni: {len(sended_users)}\n{time_string}")
     del send_message_session[message.from_user.id]
 
 @dp.callback_query(lambda callback: callback.data.startswith("admin_delete_"))
