@@ -12,10 +12,10 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram import Bot, types
 
 logging.basicConfig(level=logging.INFO)
-# bot = Bot(token="5701012090:AAGRTr0XVls7yrfcyX1XaP1btLV4D9mWYjY")
-bot = Bot(token="6440053728:AAFYsc0PcAicgsEOyYQysWi81ig7yYVG2WQ")
+bot = Bot(token="5701012090:AAGRTr0XVls7yrfcyX1XaP1btLV4D9mWYjY")
+# bot = Bot(token="6440053728:AAFYsc0PcAicgsEOyYQysWi81ig7yYVG2WQ")
 dp = Dispatcher()
-api_keys = {"Komronapi": "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"}
+api_keys = {"Komronapi": "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"}
 api_names_iterator = iter(api_keys.keys())
 api_add_session = {}
 api_control_session = {}
@@ -362,6 +362,7 @@ async def handle_message(message: types.Message):
             elif user_message == "Yuborish ✅":
                 if user_id in ownerId:
                     owner_sessions[user_id] = True
+                    del inline_keyboard_session[user_id]
                     kb = [
                         [
                             types.KeyboardButton(text="Xabar yuborish ✉️"),
