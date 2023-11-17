@@ -1,11 +1,10 @@
 import asyncio
 import json
 import logging
-import os
 from collections import defaultdict
 from datetime import datetime, date, timedelta, time, timezone
 import openai
-from aiogram import Bot, Dispatcher, types, F
+from aiogram import Dispatcher
 from aiogram.enums import ChatMemberStatus
 from aiogram.filters.command import Command
 from aiogram.utils.keyboard import InlineKeyboardBuilder
