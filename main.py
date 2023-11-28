@@ -9,12 +9,13 @@ from aiogram.enums import ChatMemberStatus
 from aiogram.filters.command import Command
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram import Bot, types
+import time
 
 logging.basicConfig(level=logging.INFO)
 # bot = Bot(token="5701012090:AAGRTr0XVls7yrfcyX1XaP1btLV4D9mWYjY")
 bot = Bot(token="6440053728:AAFYsc0PcAicgsEOyYQysWi81ig7yYVG2WQ")
 dp = Dispatcher()
-api_keys = {"Komronapi": "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"}
+api_keys = {"Komronapi": "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"}
 api_names_iterator = iter(api_keys.keys())
 api_add_session = {}
 api_control_session = {}
@@ -43,6 +44,7 @@ user_states = {}
 channel_usernames = []
 sended_users = []
 unsended_users = []
+last_response_time = {}
 
 try:
     with open('all_users.json', 'r') as file:
@@ -216,7 +218,7 @@ async def cmd_start_admin(message: types.Message):
                     types.KeyboardButton(text="Kanal qo'shish ➕")
                 ],
                 [types.KeyboardButton(text="Admin boshqaruvi 👤")],
-                [types.KeyboardButton(text="Ertangi kunga otish 🔄")],
+                # [types.KeyboardButton(text="Ertangi kunga otish 🔄")],
                 [types.KeyboardButton(text="Orqaga qaytish 🔙")],
             ]
             keyboard = types.ReplyKeyboardMarkup(keyboard=kb, resize_keyboard=True)
@@ -318,7 +320,7 @@ async def handle_message(message: types.Message):
                         types.KeyboardButton(text="Kanal qo'shish ➕")
                     ],
                     [types.KeyboardButton(text="Admin boshqaruvi 👤")],
-                    [types.KeyboardButton(text="Ertangi kunga otish 🔄")],
+                    # [types.KeyboardButton(text="Ertangi kunga otish 🔄")],
                     [types.KeyboardButton(text="Orqaga qaytish 🔙")],
                 ]
                 keyboard = types.ReplyKeyboardMarkup(keyboard=kb, resize_keyboard=True)
@@ -372,7 +374,7 @@ async def handle_message(message: types.Message):
                             types.KeyboardButton(text="Kanal qo'shish ➕")
                         ],
                         [types.KeyboardButton(text="Admin boshqaruvi 👤")],
-                        [types.KeyboardButton(text="Ertangi kunga otish 🔄")],
+                        # [types.KeyboardButton(text="Ertangi kunga otish 🔄")],
                         [types.KeyboardButton(text="Orqaga qaytish 🔙")],
                     ]
                     keyboard = types.ReplyKeyboardMarkup(keyboard=kb, resize_keyboard=True)
@@ -472,7 +474,7 @@ async def chat_with_openai(message: types.Message):
     if 'awaiting_response' in user_states[user_id] and user_states[user_id]['awaiting_response']:
         builder = InlineKeyboardBuilder()
         builder.add(types.InlineKeyboardButton(text=f"❌", callback_data=f"bekorqilish"))
-        await message.reply("⏳ Oldingi so'rovingiz bo'yicha javob tayyorlanmoqda, iltimos biroz kutib turing!", reply_markup=builder.as_markup())
+        await message.reply("⏳ Oldingi so'rovingiz bo'yicha javob tayyoralnmoqda, iltimos biroz kutib turing!", reply_markup=builder.as_markup())
         return
 
     user_states[user_id]['awaiting_response'] = True
@@ -483,7 +485,7 @@ async def chat_with_openai(message: types.Message):
 
     try:
         response = await process_user_request(user_id, user_message)
-        await message.reply(response)
+        await bot.send_message(user_id, response)
     finally:
         # Cancel the timeout task if it hasn't completed
         timeout_task.cancel()
@@ -505,22 +507,35 @@ async def process_user_request(user_id, user_message):
                                    f"😔 <b>Afsuski kunlik 30 ta so'rov limitiga yetdingiz! Limit har kuni yangilanadi.</b>",
                                    parse_mode="HTML")
         else:
-            user_reload_messages[user_id] = await bot.send_message(user_id, "⏳ Javobni tayyorlayapman…")
-            openai.api_key = await get_current_api_key()
-            response = await asyncio.to_thread(openai.ChatCompletion.create,
-                                               model="gpt-3.5-turbo-1106",
-                                               messages=[
-                                                   {"role": "system", "content": "You are a helpful assistant."},
-                                                   {"role": "user", "content": user_message}
-                                               ],
-                                               max_tokens=1000
-                                               )
+            last_response_timestamp = last_response_time.get(user_id, 0)
+            current_timestamp = time.time()
+            time_elapsed_since_last_response = current_timestamp - last_response_timestamp
 
-            if response and response.choices and response.choices[0].message.content:
-                bot_response = response['choices'][0]['message']['content']
-                await bot.delete_message(user_id, user_reload_messages[user_id].message_id)
-                await increment_request_count(user_id)
-                return bot_response
+            if time_elapsed_since_last_response >= 15:
+                user_reload_messages[user_id] = await bot.send_message(user_id, "⏳ Javobni tayyorlayapman…")
+                openai.api_key = await get_current_api_key()
+                response = await asyncio.to_thread(openai.ChatCompletion.create,
+                                                   model="gpt-3.5-turbo-1106",
+                                                   messages=[
+                                                       {"role": "system", "content": "You are a helpful assistant."},
+                                                       {"role": "user", "content": user_message}
+                                                   ],
+                                                   max_tokens=1000
+                                                   )
+
+                if response and response.choices and response.choices[0].message.content:
+                    bot_response = response['choices'][0]['message']['content']
+                    await bot.delete_message(user_id, user_reload_messages[user_id].message_id)
+
+                    await increment_request_count(user_id)
+                    last_response_time[user_id] = current_timestamp
+                    return bot_response
+            else:
+                builder = InlineKeyboardBuilder()
+                builder.add(types.InlineKeyboardButton(text=f"❌", callback_data=f"bekorqilish"))
+                wait_time = 15 - time_elapsed_since_last_response
+                await bot.send_message(user_id, f"<b>⏳ Keyingi so'rov uchun {wait_time:.0f} soniya kuting!</b>",
+                                       parse_mode="HTML", reply_markup=builder.as_markup())
     except Exception as e:
         await bot.delete_message(user_id, user_reload_messages[user_id].message_id)
         await bot.send_message(chat_id="@testchanellforbot13",
