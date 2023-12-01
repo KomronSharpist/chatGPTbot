@@ -2,7 +2,7 @@ import asyncio
 import json
 import logging
 from collections import defaultdict
-from datetime import datetime, date, timedelta, time, timezone
+from datetime import datetime, date, timedelta, time,  timezone
 import openai
 from aiogram import Dispatcher
 from aiogram.enums import ChatMemberStatus
@@ -12,10 +12,10 @@ from aiogram import Bot, types
 import time
 
 logging.basicConfig(level=logging.INFO)
-# bot = Bot(token="5701012090:AAGRTr0XVls7yrfcyX1XaP1btLV4D9mWYjY")
-bot = Bot(token="6440053728:AAFYsc0PcAicgsEOyYQysWi81ig7yYVG2WQ")
+bot = Bot(token="5701012090:AAGRTr0XVls7yrfcyX1XaP1btLV4D9mWYjY")
+# bot = Bot(token="6440053728:AAFYsc0PcAicgsEOyYQysWi81ig7yYVG2WQ")
 dp = Dispatcher()
-api_keys = {"Komronapi": "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"}
+api_keys = {"Komronapi": "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"}
 api_names_iterator = iter(api_keys.keys())
 api_add_session = {}
 api_control_session = {}
@@ -116,9 +116,12 @@ async def periodic_user_check():
         now_utc = datetime.now(timezone.utc)
         utc_plus_5 = timedelta(hours=5)
         now = now_utc + utc_plus_5
-        next_midnight = datetime.combine(now.date() + timedelta(days=1), time(0, 0), timezone.utc)
+        next_midnight = datetime.combine(now.date() + timedelta(days=1), datetime.min.time(), timezone.utc)
         time_until_midnight = (next_midnight - now).total_seconds()
 
+        hours, remainder = divmod(time_until_midnight, 3600)
+        minutes, seconds = divmod(remainder, 60)
+        print(f"Keyingi yangilanishgacha: {int(hours):02d}:{int(minutes):02d}:{int(seconds):02d}")
         await asyncio.sleep(time_until_midnight)
 
         today_active_users.clear()
@@ -207,7 +210,7 @@ async def cmd_start_admin(message: types.Message):
                     types.KeyboardButton(text="Kanal qo'shish ➕")
                 ],
                 [types.KeyboardButton(text="Admin boshqaruvi 👤")],
-                # [types.KeyboardButton(text="Ertangi kunga otish 🔄")],
+                [types.KeyboardButton(text="Ertangi kunga otish 🔄")],
                 [types.KeyboardButton(text="Orqaga qaytish 🔙")],
             ]
             keyboard = types.ReplyKeyboardMarkup(keyboard=kb, resize_keyboard=True)
@@ -309,7 +312,7 @@ async def handle_message(message: types.Message):
                         types.KeyboardButton(text="Kanal qo'shish ➕")
                     ],
                     [types.KeyboardButton(text="Admin boshqaruvi 👤")],
-                    # [types.KeyboardButton(text="Ertangi kunga otish 🔄")],
+                    [types.KeyboardButton(text="Ertangi kunga otish 🔄")],
                     [types.KeyboardButton(text="Orqaga qaytish 🔙")],
                 ]
                 keyboard = types.ReplyKeyboardMarkup(keyboard=kb, resize_keyboard=True)
@@ -339,6 +342,26 @@ async def handle_message(message: types.Message):
                     "Kanal nomi*Kanal sslikasi\nKanal nomi*Kanal sslikasi\n...\n\nIltimos shu ko`rinishda kiriting",
                     reply_markup=keyboard)
             elif user_message == "Tashlab o'tish ❌":
+                if isinstance(reklam, types.Message) and reklam.video:
+                    video = reklam.video
+                    caption = reklam.caption
+
+                    await bot.send_video(
+                        chat_id=user_id,
+                        video=video.file_id,
+                        caption=caption,
+                        disable_notification=True,
+                        reply_markup=reklamBuilder.as_markup(),
+                        parse_mode="HTML"
+                    )
+                elif isinstance(reklam, types.Message):
+                    await bot.copy_message(
+                        chat_id=user_id,
+                        from_chat_id=reklam.chat.id,
+                        message_id=reklam.message_id,
+                        reply_markup=reklamBuilder.as_markup(),
+                        parse_mode="HTML"
+                    )
                 kb = [
                     [
                         types.KeyboardButton(text="Yuborish ✅"),
@@ -363,7 +386,7 @@ async def handle_message(message: types.Message):
                             types.KeyboardButton(text="Kanal qo'shish ➕")
                         ],
                         [types.KeyboardButton(text="Admin boshqaruvi 👤")],
-                        # [types.KeyboardButton(text="Ertangi kunga otish 🔄")],
+                        [types.KeyboardButton(text="Ertangi kunga otish 🔄")],
                         [types.KeyboardButton(text="Orqaga qaytish 🔙")],
                     ]
                     keyboard = types.ReplyKeyboardMarkup(keyboard=kb, resize_keyboard=True)
@@ -379,6 +402,7 @@ async def handle_message(message: types.Message):
                     ]
                     keyboard = types.ReplyKeyboardMarkup(keyboard=kb, resize_keyboard=True)
                     await message.answer(f"Admin panelga xush kelibsiz. Menuni tanlang!", reply_markup=keyboard)
+                del send_message_session[message.from_user.id]
                 await send_message_controller(message)
             elif user_id in add_inline_keyboard_session:
                 keyboards = user_message.split("\n")
@@ -423,28 +447,55 @@ async def handle_message(message: types.Message):
             await api_control_session_service(message)
         elif user_id in chanel_control_session:
             await chanel_control_session_service(message)
-        # elif user_message == "Ertangi kunga o'tish ✅":
-        #     # for user_id in active_users:
-        #     #     await check_user_reachability(user_id)
-        #     today_logined_users.clear()
-        #     today_active_users.clear()
-        #     with open('today_logined_users.json', 'w') as file:
-        #         json.dump(today_logined_users, file)
-        #     with open('today_active_users.json', 'w') as file:
-        #         json.dump(today_active_users, file)
-        #     await cmd_start_admin(message)
+        elif user_message == "Ertangi kunga o'tish ✅":
+            today_logined_users.clear()
+            today_active_users.clear()
+            with open('today_logined_users.json', 'w') as file:
+                json.dump(today_logined_users, file)
+            with open('today_active_users.json', 'w') as file:
+                json.dump(today_active_users, file)
+            await cmd_start_admin(message)
         elif user_id in admin_sessions:
             await admin_sessions_service(message)
         else:
             await chat_with_openai(message)
 
+# async def chat_with_openai(message: types.Message):
+#     user_id = message.from_user.id
+#     user_message = message.text
+#
+#     if 'awaiting_response' in user_states[user_id] and user_states[user_id]['awaiting_response']:
+#         builder = InlineKeyboardBuilder()
+#         builder.add(types.InlineKeyboardButton(text=f"❌", callback_data=f"bekorqilish"))
+#         await message.reply("⏳ Oldingi so'rovingiz bo'yicha javob tayyoralnmoqda, iltimos biroz kutib turing!", reply_markup=builder.as_markup())
+#         return
+#
+#     user_states[user_id]['awaiting_response'] = True
+#     timeout_seconds = 5 * 60
+#     timeout_task = asyncio.create_task(timeout_reset(user_id, timeout_seconds))
+#
+#     try:
+#         response = await process_user_request(user_id, user_message)
+#         await bot.send_message(user_id, response)
+#     finally:
+#         timeout_task.cancel()
+#         user_states[user_id]['awaiting_response'] = False
+
+
 async def chat_with_openai(message: types.Message):
     user_id = message.from_user.id
-    user_message = message.text
+
+    if (message.photo or message.video or message.document) and not message.caption:
+        return
+
+    if message.caption:
+        user_message = message.caption
+    else:
+        user_message = message.text
 
     if 'awaiting_response' in user_states[user_id] and user_states[user_id]['awaiting_response']:
         builder = InlineKeyboardBuilder()
-        builder.add(types.InlineKeyboardButton(text=f"❌", callback_data=f"bekorqilish"))
+        builder.add(types.InlineKeyboardButton(text="❌", callback_data="bekorqilish"))
         await message.reply("⏳ Oldingi so'rovingiz bo'yicha javob tayyoralnmoqda, iltimos biroz kutib turing!", reply_markup=builder.as_markup())
         return
 
@@ -656,61 +707,138 @@ async def chanel_control_session_service(message: types.Message):
         chanel_add_session[user_id] = True
         await message.answer("Qoshmoqchi bolgan kanalingizni jonating. Misol : @kanal", )
 
+# async def send_message_controller(message: types.Message):
+#     global reklam
+#     start_time = datetime.now()
+#     counter = 0
+#     if isinstance(reklam, types.Message) and reklam.video:
+#         video = reklam.video
+#         caption = reklam.caption
+#
+#         for user_id in all_users:
+#             counter = counter + 1
+#             try:
+#                 await bot.send_video(
+#                     chat_id=user_id,
+#                     video=video.file_id,
+#                     caption=caption,
+#                     disable_notification=True,
+#                     reply_markup=reklamBuilder.as_markup(),
+#                     parse_mode="HTML"
+#                 )
+#                 print(f"{user_id} jonatildi, {len(all_users)-counter} qoldi ")
+#                 sended_users.append(user_id)
+#             except Exception as e:
+#                 print(f"{user_id} jonatilmadi, {len(all_users) - counter} qoldi ")
+#                 unsended_users.append(user_id)
+#                 if user_id in active_users:
+#                     active_users.remove(user_id)
+#                     inactive_users.append(user_id)
+#                     with open('inactive_users.json', 'w') as file:
+#                         json.dump(inactive_users, file)
+#                     with open('active_users.json', 'w') as file:
+#                         json.dump(active_users, file)
+#
+#     elif isinstance(reklam, types.Message):
+#         for user_id in all_users:
+#             counter = counter + 1
+#             try:
+#                 await bot.copy_message(
+#                     chat_id=user_id,
+#                     from_chat_id=reklam.chat.id,
+#                     message_id=reklam.message_id,
+#                     reply_markup=reklamBuilder.as_markup(),
+#                     parse_mode="HTML"
+#                 )
+#                 print(f"{user_id} jonatildi, {len(all_users) - counter} qoldi ")
+#                 sended_users.append(user_id)
+#             except Exception as e:
+#                 print(f"{user_id} jonatilmadi, {len(all_users) - counter} qoldi ")
+#                 unsended_users.append(user_id)
+#                 if user_id in active_users:
+#                     active_users.remove(user_id)
+#                     inactive_users.append(user_id)
+#                     with open('inactive_users.json', 'w') as file:
+#                         json.dump(inactive_users, file)
+#                     with open('active_users.json', 'w') as file:
+#                         json.dump(active_users, file)
+#
+#     end_time = datetime.now()
+#     execution_time = (end_time - start_time)
+#     total_seconds = execution_time.total_seconds()
+#     minutes, seconds = divmod(total_seconds, 60)
+#     time_string = f"{int(minutes)} daqiqa {int(seconds)} sekund vaqt oralig'ida yuborildi."
+#     await message.answer(f"Xabaringiz yuborildi ✅\n\nYuborilmaganlar soni: {len(unsended_users)}\nYuborilganlar soni: {len(sended_users)}\n{time_string}")
+
+
+async def send_video_message(user_id, video, caption, counter):
+    try:
+        await bot.send_video(
+            chat_id=user_id,
+            video=video.file_id,
+            caption=caption,
+            disable_notification=True,
+            reply_markup=reklamBuilder.as_markup(),
+            parse_mode="HTML"
+        )
+        print(f"{user_id} jonatildi, {len(all_users) - counter} qoldi ")
+        sended_users.append(user_id)
+    except Exception as e:
+        print(f"{user_id} jonatilmadi, {len(all_users) - counter} qoldi ")
+        unsended_users.append(user_id)
+        if user_id in active_users:
+            active_users.remove(user_id)
+            inactive_users.append(user_id)
+            with open('inactive_users.json', 'w') as file:
+                json.dump(inactive_users, file)
+            with open('active_users.json', 'w') as file:
+                json.dump(active_users, file)
+async def send_copy_message(user_id, counter, reklam):
+    try:
+        await bot.copy_message(
+            chat_id=user_id,
+            from_chat_id=reklam.chat.id,
+            message_id=reklam.message_id,
+            reply_markup=reklamBuilder.as_markup(),
+            parse_mode="HTML"
+        )
+        print(f"{user_id} jonatildi, {len(all_users) - counter} qoldi ")
+        sended_users.append(user_id)
+    except Exception as e:
+        print(f"{user_id} jonatilmadi, {len(all_users) - counter} qoldi ")
+        unsended_users.append(user_id)
+        if user_id in active_users:
+            active_users.remove(user_id)
+            inactive_users.append(user_id)
+            with open('inactive_users.json', 'w') as file:
+                json.dump(inactive_users, file)
+            with open('active_users.json', 'w') as file:
+                json.dump(active_users, file)
+
 async def send_message_controller(message: types.Message):
     global reklam
     start_time = datetime.now()
-    if isinstance(reklam, types.Message) and reklam.video:
+    counter = 0
+    if isinstance(reklam, types.Message):
         video = reklam.video
         caption = reklam.caption
 
-        for user_id in active_users:
-            try:
-                sended_users.append(user_id)
-                await bot.send_video(
-                    chat_id=user_id,
-                    video=video.file_id,
-                    caption=caption,
-                    disable_notification=True,
-                    reply_markup=reklamBuilder.as_markup(),
-                    parse_mode="HTML"
-                )
-            except Exception as e:
-                unsended_users.append(user_id)
-                active_users.remove(user_id)
-                inactive_users.append(user_id)
-                with open('inactive_users.json', 'w') as file:
-                    json.dump(inactive_users, file)
-                with open('active_users.json', 'w') as file:
-                    json.dump(active_users, file)
-
-    elif isinstance(reklam, types.Message):
-        for user in active_users:
-            try:
-                sended_users.append(user)
-                await bot.copy_message(
-                    chat_id=user,
-                    from_chat_id=reklam.chat.id,
-                    message_id=reklam.message_id,
-                    reply_markup=reklamBuilder.as_markup(),
-                    parse_mode="HTML"
-                )
-            except Exception as e:
-                unsended_users.append(user)
-                active_users.remove(user)
-                inactive_users.append(user)
-                with open('inactive_users.json', 'w') as file:
-                    json.dump(inactive_users, file)
-                with open('active_users.json', 'w') as file:
-                    json.dump(active_users, file)
+        for user_id in all_users:
+            counter += 1
+            if reklam.video:
+                await send_video_message(user_id, video, caption, counter)
+            else:
+                await send_copy_message(user_id, counter, reklam)
 
     end_time = datetime.now()
-    execution_time = (end_time - start_time)
+    execution_time = end_time - start_time
     total_seconds = execution_time.total_seconds()
     minutes, seconds = divmod(total_seconds, 60)
     time_string = f"{int(minutes)} daqiqa {int(seconds)} sekund vaqt oralig'ida yuborildi."
-    await message.answer(f"Xabaringiz yuborildi ✅\n\nYuborilmaganlar soni: {len(unsended_users)}\nYuborilganlar soni: {len(sended_users)}\n{time_string}")
-    del send_message_session[message.from_user.id]
 
+    await message.answer(
+        f"Xabaringiz yuborildi ✅\n\nYuborilmaganlar soni: {len(unsended_users)}\nYuborilganlar soni: {len(sended_users)}\n{time_string}"
+    )
 @dp.callback_query(lambda callback: callback.data.startswith("admin_delete_"))
 async def admin_controller(callback: types.CallbackQuery):
     if callback.data.startswith("admin_delete_"):
@@ -830,4 +958,9 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         pass
     finally:
-        loop.run_until_complete(bot.close())
+        tasks = asyncio.all_tasks(loop=loop)
+        for task in tasks:
+            task.cancel()
+
+        loop.run_until_complete(asyncio.gather(*tasks, return_exceptions=True))
+        loop.close()
