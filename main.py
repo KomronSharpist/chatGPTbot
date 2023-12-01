@@ -783,6 +783,13 @@ async def send_video_message(user_id, video, caption, counter):
         )
         print(f"{user_id} jonatildi, {len(all_users) - counter} qoldi ")
         sended_users.append(user_id)
+        if user_id in inactive_users:
+            active_users.append(user_id)
+            inactive_users.remove(user_id)
+            with open('inactive_users.json', 'w') as file:
+                json.dump(inactive_users, file)
+            with open('active_users.json', 'w') as file:
+                json.dump(active_users, file)
     except Exception as e:
         print(f"{user_id} jonatilmadi, {len(all_users) - counter} qoldi ")
         unsended_users.append(user_id)
@@ -804,6 +811,13 @@ async def send_copy_message(user_id, counter, reklam):
         )
         print(f"{user_id} jonatildi, {len(all_users) - counter} qoldi ")
         sended_users.append(user_id)
+        if user_id in inactive_users:
+            active_users.append(user_id)
+            inactive_users.remove(user_id)
+            with open('inactive_users.json', 'w') as file:
+                json.dump(inactive_users, file)
+            with open('active_users.json', 'w') as file:
+                json.dump(active_users, file)
     except Exception as e:
         print(f"{user_id} jonatilmadi, {len(all_users) - counter} qoldi ")
         unsended_users.append(user_id)
