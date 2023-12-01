@@ -111,17 +111,6 @@ async def is_subscribed(user_id, channel_username):
             return True
     except Exception as e:
         return False
-async def check_user_reachability(user_id):
-    try:
-        send_message_session = await bot.send_message(chat_id=user_id,text="Botni block qilmaganingiz tekshirilmoqda, bu habarga etibor bermang. Tushunganingiz uchun raxmat 😇")
-        await bot.delete_message(user_id, send_message_session.message_id)
-    except Exception as e:
-        active_users.remove(user_id)
-        inactive_users.append(user_id)
-        with open('inactive_users.json', 'w') as file:
-            json.dump(inactive_users, file)
-        with open('active_users.json', 'w') as file:
-            json.dump(active_users, file)
 async def periodic_user_check():
     while True:
         now_utc = datetime.now(timezone.utc)
@@ -434,38 +423,20 @@ async def handle_message(message: types.Message):
             await api_control_session_service(message)
         elif user_id in chanel_control_session:
             await chanel_control_session_service(message)
-        elif user_message == "Ertangi kunga o'tish ✅":
-            # for user_id in active_users:
-            #     await check_user_reachability(user_id)
-            today_logined_users.clear()
-            today_active_users.clear()
-            with open('today_logined_users.json', 'w') as file:
-                json.dump(today_logined_users, file)
-            with open('today_active_users.json', 'w') as file:
-                json.dump(today_active_users, file)
-            await cmd_start_admin(message)
+        # elif user_message == "Ertangi kunga o'tish ✅":
+        #     # for user_id in active_users:
+        #     #     await check_user_reachability(user_id)
+        #     today_logined_users.clear()
+        #     today_active_users.clear()
+        #     with open('today_logined_users.json', 'w') as file:
+        #         json.dump(today_logined_users, file)
+        #     with open('today_active_users.json', 'w') as file:
+        #         json.dump(today_active_users, file)
+        #     await cmd_start_admin(message)
         elif user_id in admin_sessions:
             await admin_sessions_service(message)
         else:
             await chat_with_openai(message)
-
-# async def chat_with_openai(message: types.Message):
-#     user_id = message.from_user.id
-#     user_message = message.text
-#
-#     if 'awaiting_response' in user_states[user_id] and user_states[user_id]['awaiting_response']:
-#         builder = InlineKeyboardBuilder()
-#         builder.add(types.InlineKeyboardButton(text=f"❌", callback_data=f"bekorqilish"))
-#         await message.reply("⏳ Oldingi so'rovingiz bo'yicha javob tayyorlanmoqda, iltimos biroz kutib turing!", reply_markup=builder.as_markup())
-#         return
-#
-#     user_states[user_id]['awaiting_response'] = True
-#
-#     response = await process_user_request(user_id, user_message)
-#
-#     user_states[user_id]['awaiting_response'] = False
-#
-#     await message.reply(response)
 
 async def chat_with_openai(message: types.Message):
     user_id = message.from_user.id
@@ -478,8 +449,6 @@ async def chat_with_openai(message: types.Message):
         return
 
     user_states[user_id]['awaiting_response'] = True
-
-    # Set a timeout task to reset the awaiting_response after 5 minutes
     timeout_seconds = 5 * 60
     timeout_task = asyncio.create_task(timeout_reset(user_id, timeout_seconds))
 
@@ -487,18 +456,12 @@ async def chat_with_openai(message: types.Message):
         response = await process_user_request(user_id, user_message)
         await bot.send_message(user_id, response)
     finally:
-        # Cancel the timeout task if it hasn't completed
         timeout_task.cancel()
-
-        # Reset the awaiting_response
         user_states[user_id]['awaiting_response'] = False
 
 async def timeout_reset(user_id, timeout_seconds):
     await asyncio.sleep(timeout_seconds)
     user_states[user_id]['awaiting_response'] = False
-
-async def is_text_message(message):
-    return isinstance(message, str) and len(message.strip()) > 0
 
 async def process_user_request(user_id, user_message):
     try:
