@@ -12,9 +12,10 @@ from aiogram import Bot, types
 import time
 
 logging.basicConfig(level=logging.INFO)
+# bot = Bot(token="5701012090:AAGRTr0XVls7yrfcyX1XaP1btLV4D9mWYjY")
 bot = Bot(token="6440053728:AAFYsc0PcAicgsEOyYQysWi81ig7yYVG2WQ")
 dp = Dispatcher()
-api_keys = {"Komronapi": "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"}
+api_keys = {"Komronapi": "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"}
 api_names_iterator = iter(api_keys.keys())
 api_add_session = {}
 api_control_session = {}
