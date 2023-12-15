@@ -12,7 +12,6 @@ from aiogram import Bot, types
 import time
 
 logging.basicConfig(level=logging.INFO)
-# bot = Bot(token="5701012090:AAGRTr0XVls7yrfcyX1XaP1btLV4D9mWYjY")
 bot = Bot(token="6440053728:AAFYsc0PcAicgsEOyYQysWi81ig7yYVG2WQ")
 dp = Dispatcher()
 api_keys = {"Komronapi": "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"}
@@ -404,6 +403,8 @@ async def handle_message(message: types.Message):
                     await message.answer(f"Admin panelga xush kelibsiz. Menuni tanlang!", reply_markup=keyboard)
                 del send_message_session[message.from_user.id]
                 await send_message_controller(message)
+                sended_users.clear()
+                unsended_users.clear()
             elif user_id in add_inline_keyboard_session:
                 keyboards = user_message.split("\n")
                 for keyboard in keyboards:
@@ -460,32 +461,10 @@ async def handle_message(message: types.Message):
         else:
             await chat_with_openai(message)
 
-# async def chat_with_openai(message: types.Message):
-#     user_id = message.from_user.id
-#     user_message = message.text
-#
-#     if 'awaiting_response' in user_states[user_id] and user_states[user_id]['awaiting_response']:
-#         builder = InlineKeyboardBuilder()
-#         builder.add(types.InlineKeyboardButton(text=f"❌", callback_data=f"bekorqilish"))
-#         await message.reply("⏳ Oldingi so'rovingiz bo'yicha javob tayyoralnmoqda, iltimos biroz kutib turing!", reply_markup=builder.as_markup())
-#         return
-#
-#     user_states[user_id]['awaiting_response'] = True
-#     timeout_seconds = 5 * 60
-#     timeout_task = asyncio.create_task(timeout_reset(user_id, timeout_seconds))
-#
-#     try:
-#         response = await process_user_request(user_id, user_message)
-#         await bot.send_message(user_id, response)
-#     finally:
-#         timeout_task.cancel()
-#         user_states[user_id]['awaiting_response'] = False
-
-
 async def chat_with_openai(message: types.Message):
     user_id = message.from_user.id
 
-    if (message.photo or message.video or message.document) and not message.caption:
+    if (message.photo or message.video or message.document or message.voice) and not message.caption:
         return
 
     if message.caption:
@@ -706,69 +685,6 @@ async def chanel_control_session_service(message: types.Message):
     if user_message == "Kanal qoshish ➕":
         chanel_add_session[user_id] = True
         await message.answer("Qoshmoqchi bolgan kanalingizni jonating. Misol : @kanal", )
-
-# async def send_message_controller(message: types.Message):
-#     global reklam
-#     start_time = datetime.now()
-#     counter = 0
-#     if isinstance(reklam, types.Message) and reklam.video:
-#         video = reklam.video
-#         caption = reklam.caption
-#
-#         for user_id in all_users:
-#             counter = counter + 1
-#             try:
-#                 await bot.send_video(
-#                     chat_id=user_id,
-#                     video=video.file_id,
-#                     caption=caption,
-#                     disable_notification=True,
-#                     reply_markup=reklamBuilder.as_markup(),
-#                     parse_mode="HTML"
-#                 )
-#                 print(f"{user_id} jonatildi, {len(all_users)-counter} qoldi ")
-#                 sended_users.append(user_id)
-#             except Exception as e:
-#                 print(f"{user_id} jonatilmadi, {len(all_users) - counter} qoldi ")
-#                 unsended_users.append(user_id)
-#                 if user_id in active_users:
-#                     active_users.remove(user_id)
-#                     inactive_users.append(user_id)
-#                     with open('inactive_users.json', 'w') as file:
-#                         json.dump(inactive_users, file)
-#                     with open('active_users.json', 'w') as file:
-#                         json.dump(active_users, file)
-#
-#     elif isinstance(reklam, types.Message):
-#         for user_id in all_users:
-#             counter = counter + 1
-#             try:
-#                 await bot.copy_message(
-#                     chat_id=user_id,
-#                     from_chat_id=reklam.chat.id,
-#                     message_id=reklam.message_id,
-#                     reply_markup=reklamBuilder.as_markup(),
-#                     parse_mode="HTML"
-#                 )
-#                 print(f"{user_id} jonatildi, {len(all_users) - counter} qoldi ")
-#                 sended_users.append(user_id)
-#             except Exception as e:
-#                 print(f"{user_id} jonatilmadi, {len(all_users) - counter} qoldi ")
-#                 unsended_users.append(user_id)
-#                 if user_id in active_users:
-#                     active_users.remove(user_id)
-#                     inactive_users.append(user_id)
-#                     with open('inactive_users.json', 'w') as file:
-#                         json.dump(inactive_users, file)
-#                     with open('active_users.json', 'w') as file:
-#                         json.dump(active_users, file)
-#
-#     end_time = datetime.now()
-#     execution_time = (end_time - start_time)
-#     total_seconds = execution_time.total_seconds()
-#     minutes, seconds = divmod(total_seconds, 60)
-#     time_string = f"{int(minutes)} daqiqa {int(seconds)} sekund vaqt oralig'ida yuborildi."
-#     await message.answer(f"Xabaringiz yuborildi ✅\n\nYuborilmaganlar soni: {len(unsended_users)}\nYuborilganlar soni: {len(sended_users)}\n{time_string}")
 
 
 async def send_video_message(user_id, video, caption, counter):
